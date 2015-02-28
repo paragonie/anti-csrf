@@ -28,11 +28,7 @@ $twigEnv->addFunction(
     new \Twig_SimpleFunction(
         'form_token',
         function($lock_to = null) {
-            static $csrf = null;
-            if ($csrf === null) {
-                $csrf = new Resonantcore\AntiCSRF\AntiCSRF();
-            }
-            return $csrf->insertToken($lock_to, false);
+            return \Resonantcore\AntiCSRF\AntiCSRF::insertToken($lock_to, false);
         }
         ['is_safe' => ['html']]
     )
@@ -47,4 +43,16 @@ Next, call the newly created form_token function from your templates.
 
     {# ... the rest of your form here ... #}
 </form>
+```
+
+## Validating a Request
+
+```php
+    if (!empty($_POST)) {
+        if (\Resonantcore\AntiCSRF\AntiCSRF::validateRequest()) {
+            // Valid
+        } else {
+            // Log a CSRF attack attempt
+        }
+    }
 ```
