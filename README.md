@@ -1,5 +1,7 @@
 # Resonant Core's Anti-CSRF Library
 
+[![Build Status](https://travis-ci.org/resonantcore/anti-csrf.svg?branch=master)](https://travis-ci.org/resonantcore/anti-csrf)
+
 ## Motivation
 
 There aren't any good session-powered CSRF prevention libraries. By good we mean:
