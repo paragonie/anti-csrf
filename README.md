@@ -26,7 +26,7 @@ First, add a filter like this one:
 ```php
 $twigEnv->addFunction(
     new \Twig_SimpleFunction(
-        'form_token`,
+        'form_token',
         function($lock_to = null) {
             static $csrf = null;
             if ($csrf === null) {
