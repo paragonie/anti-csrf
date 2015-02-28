@@ -1,0 +1,31 @@
+{
+    "name":         "resonantcore/anti-csrf",
+    "description":  "Resonant Core's Anti-CSRF Security Library",
+    "version":      "1.0.0",
+    "keywords": [
+            "security",
+            "csrf",
+            "appsec",
+            "session"
+        ],
+    "license":      "AGPL-3.0",
+    "type":         "library",
+    "authors": [
+            {
+                "name":     "Scott Arciszewski",
+                "email":    "scott@resonantcore.net",
+                "homepage": "https://resonantcore.net",
+                "role":     "Developer"
+            }
+        ],
+    "support": {
+        "issues":   "https://github.com/resonantcore/anti-csrf/issues",
+        "email":    "info@resonantcore.net",
+        "source":   "https://github.com/resonantcore/anti-csrf"
+    },
+    "autoload": {
+        "psr-4": {
+            "Resonantcore\\AntiCSRF": "src/"
+        }
+    }
+}
