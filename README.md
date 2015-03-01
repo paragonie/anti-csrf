@@ -29,7 +29,7 @@ $twigEnv->addFunction(
         'form_token',
         function($lock_to = null) {
             return \Resonantcore\AntiCSRF\AntiCSRF::insertToken($lock_to, false);
-        }
+        },
         ['is_safe' => ['html']]
     )
 );
