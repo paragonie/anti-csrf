@@ -26,9 +26,10 @@ class AntiCSRF
     const FORM_TOKEN = '_CSRF_TOKEN';
     const SESSION_INDEX = 'CSRF';
     const HASH_ALGO = 'sha256';
-    const RECYCLE_AFTER = 100;
+    const RECYCLE_AFTER = 65535;
 
     public static $hmac_ip = true;
+    public static $expire_old = false;
 
     /**
      * Insert a CSRF token to a form
@@ -188,6 +189,10 @@ class AntiCSRF
      */
     private static function recycleTokens()
     {
+        if (!self::$expire_old) {
+            // This is turned off.
+            return;
+        }
         // Sort by creation time
         \uasort($_SESSION[self::SESSION_INDEX], function($a, $b) {
             return $a['created'] - $b['created'];
