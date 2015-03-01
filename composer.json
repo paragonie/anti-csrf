@@ -8,7 +8,7 @@
             "appsec",
             "session"
         ],
-    "license":      "AGPL-3.0",
+    "license":      "(MIT or AGPL-3.0)",
     "type":         "library",
     "authors": [
             {
