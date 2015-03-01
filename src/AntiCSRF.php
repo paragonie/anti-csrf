@@ -26,8 +26,8 @@ class AntiCSRF
     const FORM_TOKEN = '_CSRF_TOKEN';
     const SESSION_INDEX = 'CSRF';
     const HASH_ALGO = 'sha256';
-    const RECYCLE_AFTER = 65535;
-
+    
+    public static $recycle_after = 65535;
     public static $hmac_ip = true;
     public static $expire_old = false;
 
@@ -155,6 +155,25 @@ class AntiCSRF
 
         return self::hash_equals($token, $expected);
     }
+    
+    /**
+     * Use this to change the configuration settings.
+     * Only use this if you know what you are doing.
+     * 
+     * @param array $options
+     */
+    public static function reconfigure(array $options = [])
+    {
+        foreach ($options as $opt => $val) {
+            switch ($opt) {
+                case 'recycle_after':
+                case 'hmac_ip':
+                case 'expire_old':
+                    self::${$opt} = $val;
+                    break;
+            }
+        }
+    }
 
     /**
      * Generate, store, and return the index and token
@@ -198,7 +217,7 @@ class AntiCSRF
             return $a['created'] - $b['created'];
         });
 
-        if (\count($_SESSION[self::SESSION_INDEX]) > self::RECYCLE_AFTER) {
+        if (\count($_SESSION[self::SESSION_INDEX]) > self::$recycle_after) {
             // Let's knock off the oldest one
             \array_shift($_SESSION[self::SESSION_INDEX]);
         }
@@ -217,7 +236,7 @@ class AntiCSRF
             throw new \Exception("\$bytes must be a positive integer greater than zero.");
         }
 
-        if (function_exists('\mcrypt_create_iv')) {
+        if (\function_exists('\mcrypt_create_iv')) {
             // mcrypt_create_iv() is smart; uses Windows APIs to get entropy if it needs to
             return \mcrypt_create_iv($bytes, MCRYPT_DEV_URANDOM);
         }
@@ -227,7 +246,7 @@ class AntiCSRF
             $fp = \fopen('/dev/urandom', 'rb');
 
             // Turn off buffering so we don't waste (8192-$bytes) bytes of urandom entropy
-            stream_set_read_buffer($fp, 0);
+            \stream_set_read_buffer($fp, 0);
 
             $buf = \fread($fp, $bytes);
             \fclose($fp);
