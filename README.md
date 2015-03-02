@@ -15,6 +15,8 @@ There aren't any good session-powered CSRF prevention libraries. By good we mean
 * An upper limit on the number of tokens stored with session data is enforced
   * In our implementation, the oldest are removed first
 
+**Warning** - Do not use in any project where all `$_SESSION` data is stored client-side in a cookie. This will quickly run up the 4KB storage max for an HTTP cookie.
+
 ## Using it in Any Project
 
 See `autoload.php` for an SPL autoloader.
