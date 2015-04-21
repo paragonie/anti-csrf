@@ -59,8 +59,6 @@ Next, call the newly created form_token function from your templates.
     }
 ```
 
-## About Resonant Core
+## Project Status
 
-* [Our Website](https://resonantcore.net)
-* [What is Resonant Core?](https://resonantcore.net/what/)
-* [ResonantCore on Twitter](https://twitter.com/ResonantCore)
+* Resonant Core is no longer a thing, but [Scott](https://scott.arciszewski.me) will continue to maintain this package.
