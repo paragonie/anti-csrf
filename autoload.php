@@ -1,7 +1,7 @@
 <?php
 spl_autoload_register(function($class) {
     // does the class use the namespace prefix?
-    $namespace = 'Resonantcore\\AntiCSRF\\';
+    $namespace = 'ParagonIE\\AntiCSRF\\';
     $base_dir = __DIR__.'/src/';
 
     $len = strlen($namespace);

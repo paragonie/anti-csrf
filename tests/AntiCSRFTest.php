@@ -1,6 +1,6 @@
 <?php
 
-use \Resonantcore\AntiCSRF\AntiCSRF;
+use \ParagonIE\AntiCSRF\AntiCSRF;
 
 class AntiCSRFTest extends PHPUnit_Framework_TestCase
 {

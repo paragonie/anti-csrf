@@ -1,8 +1,8 @@
 <?php
-namespace Resonantcore\AntiCSRF;
+namespace ParagonIE\AntiCSRF;
 
 /**
- * Copyright (c) 2015 Resonant Core <https://resonantcore.net>
+ * Copyright (c) 2015 Paragon Initiative Enterprises <https://paragonie.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -21,7 +21,7 @@ namespace Resonantcore\AntiCSRF;
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 Resonant Core
+ * Copyright (c) 2015 Paragon Initiative Enterprises
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -208,8 +208,8 @@ class AntiCSRF
      */
     private static function generateToken($lockto)
     {
-        $index = \base64_encode(self::random_bytes(18));
-        $token = \base64_encode(self::random_bytes(32));
+        $index = \base64_encode(\random_bytes(18));
+        $token = \base64_encode(\random_bytes(32));
 
         $_SESSION[self::SESSION_INDEX][$index] = [
             'created' => \intval(\date('YmdHis')),
@@ -249,42 +249,6 @@ class AntiCSRF
     }
 
     /**
-     * Generate a cryptographically secure pseudorandom number
-     *
-     * @param integer $bytes - Number of bytes needed
-     * @param bool $fail_open - Trigger a warning rather than throwing an exception
-     * @return string
-     */
-    private static function random_bytes($bytes)
-    {
-        if (!\is_int($bytes) || $bytes < 1) {
-            throw new \Exception("\$bytes must be a positive integer greater than zero.");
-        }
-
-        if (\function_exists('\mcrypt_create_iv')) {
-            // mcrypt_create_iv() is smart; uses Windows APIs to get entropy if it needs to
-            return \mcrypt_create_iv($bytes, MCRYPT_DEV_URANDOM);
-        }
-
-        if (\is_readable('/dev/urandom')) {
-            // If /dev/urandom is readable, grab some entropy
-            $fp = \fopen('/dev/urandom', 'rb');
-
-            // Turn off buffering so we don't waste (8192-$bytes) bytes of urandom entropy
-            \stream_set_read_buffer($fp, 0);
-
-            $buf = \fread($fp, $bytes);
-            \fclose($fp);
-
-            if ($buf !== false) {
-                return $buf;
-            }
-        }
-
-        return \openssl_random_pseudo_bytes($bytes);
-    }
-
-    /**
      * Wrapper for htmlentities()
      *
      * @param string $untrusted
@@ -310,14 +274,14 @@ class AntiCSRF
             return \hash_equals($a, $b);
         }
 
-        $nonce = self::random_bytes(32);
+        $nonce = \random_bytes(32);
         return \hash_hmac('sha256', $a, $nonce) === \hash_hmac('sha256', $b, $nonce);
     }
 
     /**
      * Binary-safe substr() implementation
      *
-     * @param string $string
+     * @param string $str
      * @param int $start
      * @param int|null $length
      * @return string
@@ -332,7 +296,7 @@ class AntiCSRF
     /**
      * Binary-safe strlen() implementation
      *
-     * @param string $string
+     * @param string $str
      * @return string
      */
     private static function stringLength($str)

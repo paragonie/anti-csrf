@@ -1,7 +1,7 @@
 {
-    "name":         "resonantcore/anti-csrf",
-    "description":  "Resonant Core's Anti-CSRF Security Library",
-    "version":      "1.0.0",
+    "name":         "paragonie/anti-csrf",
+    "description":  "Paragon Initiative's Anti-CSRF Security Library",
+    "version":      "0.9.0",
     "keywords": [
             "security",
             "csrf",
@@ -13,20 +13,23 @@
     "authors": [
             {
                 "name":     "Scott Arciszewski",
-                "email":    "scott@resonantcore.net",
-                "homepage": "https://resonantcore.net",
+                "email":    "scott@paragonie.com",
+                "homepage": "https://paragonie.com",
                 "role":     "Developer"
             }
         ],
     "support": {
-        "issues":   "https://github.com/resonantcore/anti-csrf/issues",
-        "email":    "info@resonantcore.net",
-        "source":   "https://github.com/resonantcore/anti-csrf"
+        "issues":   "https://github.com/paragonie/anti-csrf/issues",
+        "email":    "info@paragonie.com",
+        "source":   "https://github.com/paragonie/anti-csrf"
     },
     "autoload": {
         "psr-4": {
-            "Resonantcore\\AntiCSRF\\": "src/"
+            "ParagonIE\\AntiCSRF\\": "src/"
         }
+    },
+    "require": {
+        "paragonie/random_compat": ">= 0.9.4"
     },
     "require-dev": {
         "phpunit/phpunit": "4.5.*"
