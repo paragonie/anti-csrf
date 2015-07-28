@@ -32,7 +32,7 @@
         "paragonie/random_compat": ">= 0.9.4"
     },
     "require-dev": {
-        "paragonie/random_compat": ">= 0.9.4",
+        "paragonie/random_compat": "dev-master",
         "phpunit/phpunit": "4.5.*"
     }
 }
