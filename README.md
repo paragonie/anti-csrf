@@ -1,6 +1,6 @@
-# Resonant Core's Anti-CSRF Library
+# Anti-CSRF Library
 
-[![Build Status](https://travis-ci.org/resonantcore/anti-csrf.svg?branch=master)](https://travis-ci.org/resonantcore/anti-csrf)
+[![Build Status](https://travis-ci.org/paragonie/anti-csrf.svg?branch=master)](https://travis-ci.org/paragonie/anti-csrf)
 
 ## Motivation
 
@@ -15,7 +15,9 @@ There aren't any good session-powered CSRF prevention libraries. By good we mean
 * An upper limit on the number of tokens stored with session data is enforced
   * In our implementation, the oldest are removed first
 
-**Warning** - Do not use in any project where all `$_SESSION` data is stored client-side in a cookie. This will quickly run up the 4KB storage max for an HTTP cookie.
+**Warning** - Do not use in any project where all `$_SESSION` data is stored 
+client-side in a cookie. This will quickly run up the 4KB storage max for 
+an HTTP cookie.
 
 ## Using it in Any Project
 
@@ -26,11 +28,12 @@ See `autoload.php` for an SPL autoloader.
 First, add a filter like this one:
 
 ```php
+use \ParagonIE\AntiCSRF\AntiCSRF;
 $twigEnv->addFunction(
     new \Twig_SimpleFunction(
         'form_token',
         function($lock_to = null) {
-            return \Resonantcore\AntiCSRF\AntiCSRF::insertToken($lock_to, false);
+            return AntiCSRF::insertToken($lock_to, false);
         },
         ['is_safe' => ['html']]
     )
@@ -51,14 +54,10 @@ Next, call the newly created form_token function from your templates.
 
 ```php
     if (!empty($_POST)) {
-        if (\Resonantcore\AntiCSRF\AntiCSRF::validateRequest()) {
+        if (\ParagonIE\AntiCSRF\AntiCSRF::validateRequest()) {
             // Valid
         } else {
             // Log a CSRF attack attempt
         }
     }
 ```
-
-## Project Status
-
-* Resonant Core is no longer a thing, but [Scott](https://scott.arciszewski.me) will continue to maintain this package.
