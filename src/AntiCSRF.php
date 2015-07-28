@@ -72,7 +72,9 @@ class AntiCSRF
         }
 
         if (empty($lockto)) {
-            $lockto = $_SERVER['REQUEST_URI'];
+            $lockto = isset($_SERVER['REQUEST_URI']) 
+                ? $_SERVER['REQUEST_URI']
+                : '/';
         }
 
         if (\preg_match('#/$#', $lockto)) {
