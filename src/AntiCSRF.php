@@ -65,8 +65,30 @@ class AntiCSRF
      */
     public static function insertToken($lockto = null, $echo = true)
     {
-        $ret = '';
-
+	    $token_array = self::getTokenArray($lockto);
+	    
+	    $ret = implode( array_map( function( $key, $value ) {
+		    return "<!--\n-->".
+	            "<input type=\"hidden\"".
+	            " name=\"".$key."\"".
+	            " value=\"".self::noHTML($value)."\"".
+	            " />";
+	    }, array_keys($token_array), $token_array) );
+	    
+	    if( $echo ) {
+		    echo $ret;
+		    return;
+	    }
+        return $ret;
+    }
+	
+	/**
+	 * Retrieve a token array for unit testing endpoints
+	 * 
+	 * @return array
+	 */
+	public static function getTokenArray($lockto = null)
+	{
         if (!isset($_SESSION[self::SESSION_INDEX])) {
             $_SESSION[self::SESSION_INDEX] = [];
         }
@@ -82,13 +104,7 @@ class AntiCSRF
         }
 
         list($index, $token) = self::generateToken($lockto);
-
-        $ret .= "<!--\n-->".
-            "<input type=\"hidden\"".
-            " name=\"".self::FORM_INDEX."\"".
-            " value=\"".self::noHTML($index)."\"".
-            " />";
-
+        
         if (self::$hmac_ip !== false) {
             // Use HMAC to only allow this particular IP to send this request
             $token = \base64_encode(
@@ -102,20 +118,12 @@ class AntiCSRF
                 )
             );
         }
-
-
-        $ret .= "<!--\n-->".
-            "<input type=\"hidden\"".
-            " name=\"".self::FORM_TOKEN."\"".
-            " value=\"".self::noHTML($token)."\"".
-            " />";
-
-        if ($echo) {
-            echo $ret;
-            return;
-        }
-        return $ret;
-    }
+        
+        return array(
+			self::FORM_INDEX => $index,
+			self::FORM_TOKEN => $token,
+		);
+	}
 
     /**
      * Validate a request based on $_SESSION and $_POST data
