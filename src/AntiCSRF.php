@@ -67,13 +67,13 @@ class AntiCSRF
     {
 	    $token_array = self::getTokenArray($lockto);
 	    
-	    $ret = array_map( function( $key, $value ) {
+	    $ret = implode( array_map( function( $key, $value ) {
 		    return "<!--\n-->".
 	            "<input type=\"hidden\"".
 	            " name=\"".$key."\"".
 	            " value=\"".self::noHTML($value)."\"".
 	            " />";
-	    }, array_keys($token_array), $token_array);
+	    }, array_keys($token_array), $token_array) );
 	    
 	    if( $echo ) {
 		    echo $ret;
