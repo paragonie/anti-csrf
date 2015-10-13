@@ -29,6 +29,7 @@
         }
     },
     "require": {
+        "php": ">=5.4",
         "paragonie/random_compat": ">= 0.9.4"
     },
     "require-dev": {
