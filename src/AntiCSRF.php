@@ -51,7 +51,7 @@ class AntiCSRF
     const FORM_TOKEN = '_CSRF_TOKEN';
     const SESSION_INDEX = 'CSRF';
     const HASH_ALGO = 'sha256';
-    
+
     public static $recycle_after = 65535;
     public static $hmac_ip = true;
     public static $expire_old = false;
@@ -59,14 +59,14 @@ class AntiCSRF
     /**
      * Insert a CSRF token to a form
      *
-     * @param $lockto This CSRF token is only valid for this HTTP request endpoint
-     * @param $echo if true, echo instead of returning
+     * @param string $lockto This CSRF token is only valid for this HTTP request endpoint
+     * @param boolean $echo if true, echo instead of returning
      * @return string
      */
     public static function insertToken($lockto = null, $echo = true)
     {
 	    $token_array = self::getTokenArray($lockto);
-	    
+
 	    $ret = implode( array_map( function( $key, $value ) {
 		    return "<!--\n-->".
 	            "<input type=\"hidden\"".
@@ -74,17 +74,17 @@ class AntiCSRF
 	            " value=\"".self::noHTML($value)."\"".
 	            " />";
 	    }, array_keys($token_array), $token_array) );
-	    
+
 	    if( $echo ) {
 		    echo $ret;
 		    return;
 	    }
         return $ret;
     }
-	
+
 	/**
 	 * Retrieve a token array for unit testing endpoints
-	 * 
+	 *
 	 * @return array
 	 */
 	public static function getTokenArray($lockto = null)
@@ -94,17 +94,17 @@ class AntiCSRF
         }
 
         if (empty($lockto)) {
-            $lockto = isset($_SERVER['REQUEST_URI']) 
+            $lockto = isset($_SERVER['REQUEST_URI'])
                 ? $_SERVER['REQUEST_URI']
                 : '/';
         }
 
-        if (\preg_match('#/$#', $lockto)) {
+        if (preg_match('#/$#', $lockto)) {
             $lockto = substr($lockto, 0, strlen($lockto) - 1);
         }
 
         list($index, $token) = self::generateToken($lockto);
-        
+
         if (self::$hmac_ip !== false) {
             // Use HMAC to only allow this particular IP to send this request
             $token = \base64_encode(
@@ -118,12 +118,12 @@ class AntiCSRF
                 )
             );
         }
-        
+
         return array(
 			self::FORM_INDEX => $index,
 			self::FORM_TOKEN => $token,
 		);
-	}
+    }
 
     /**
      * Validate a request based on $_SESSION and $_POST data
@@ -190,11 +190,11 @@ class AntiCSRF
 
         return self::hash_equals($token, $expected);
     }
-    
+
     /**
      * Use this to change the configuration settings.
      * Only use this if you know what you are doing.
-     * 
+     *
      * @param array $options
      */
     public static function reconfigure(array $options = [])

@@ -20,7 +20,7 @@ class AntiCSRFTest extends PHPUnit_Framework_TestCase
         );
         $this->assertContains("<input", $token_html);
     }
-    
+
     /**
      * @covers \Resonantcore\AntiCSRF\AntiCSRF::getTokenArray()
      */
