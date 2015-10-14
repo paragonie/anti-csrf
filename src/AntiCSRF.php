@@ -66,16 +66,20 @@ class AntiCSRF
     public static function insertToken($lockto = null, $echo = true)
     {
 	    $token_array = self::getTokenArray($lockto);
-
-	    $ret = implode( array_map( function( $key, $value ) {
-		    return "<!--\n-->".
-	            "<input type=\"hidden\"".
-	            " name=\"".$key."\"".
-	            " value=\"".self::noHTML($value)."\"".
-	            " />";
-	    }, array_keys($token_array), $token_array) );
-
-	    if( $echo ) {
+	    $ret = \implode(
+	    	\array_map(
+        		function($key, $value) {
+    			    return "<!--\n-->".
+    		            "<input type=\"hidden\"".
+    		            " name=\"".$key."\"".
+    		            " value=\"".self::noHTML($value)."\"".
+    		            " />";
+    	        },
+    	        \array_keys($token_array),
+    	        $token_array
+            )
+        );
+	    if ($echo) {
 		    echo $ret;
 		    return null;
 	    }
@@ -99,8 +103,8 @@ class AntiCSRF
                 : '/';
         }
 
-        if (preg_match('#/$#', $lockto)) {
-            $lockto = substr($lockto, 0, strlen($lockto) - 1);
+        if (\preg_match('#/$#', $lockto)) {
+            $lockto = \substr($lockto, 0, strlen($lockto) - 1);
         }
 
         list($index, $token) = self::generateToken($lockto);
@@ -187,7 +191,6 @@ class AntiCSRF
                 )
             );
         }
-
         return self::hash_equals($token, $expected);
     }
 
@@ -234,7 +237,7 @@ class AntiCSRF
         $_SESSION[self::SESSION_INDEX][$index]['lockto'] = $lockto;
 
         self::recycleTokens();
-        return [ $index, $token ];
+        return [$index, $token];
     }
 
     /**
@@ -248,9 +251,12 @@ class AntiCSRF
             return;
         }
         // Sort by creation time
-        \uasort($_SESSION[self::SESSION_INDEX], function($a, $b) {
-            return $a['created'] - $b['created'];
-        });
+        \uasort(
+            $_SESSION[self::SESSION_INDEX],
+            function($a, $b) {
+                return $a['created'] - $b['created'];
+            }
+        );
 
         if (\count($_SESSION[self::SESSION_INDEX]) > self::$recycle_after) {
             // Let's knock off the oldest one
