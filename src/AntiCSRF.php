@@ -301,6 +301,7 @@ class AntiCSRF
         if (\function_exists('\\mb_substr')) {
             return \mb_substr($str, $start, $length, '8bit');
         }
+        return \substr($str, $start, $length);
     }
 
     /**
