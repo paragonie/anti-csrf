@@ -7,7 +7,7 @@ php:
 
 install:
 
-- composer self-update
+- composer self-update && composer update
 - chmod +x ./run-tests.sh
 
 script: ./run-tests.sh
