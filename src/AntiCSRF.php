@@ -77,7 +77,7 @@ class AntiCSRF
 
 	    if( $echo ) {
 		    echo $ret;
-		    return;
+		    return null;
 	    }
         return $ret;
     }
