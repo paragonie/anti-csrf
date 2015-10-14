@@ -3,7 +3,6 @@
 origdir=`pwd`
 cdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 cd $origdir
-parentdir="$(dirname $cdir)"
 
 clean=0 # Clean up?
 gpg --fingerprint D8406D0D82947747293778314AA394086372C20A
@@ -53,7 +52,7 @@ if [ $? -eq 0 ]; then
     echo
     echo -e "\033[33mBegin Unit Testing\033[0m"
     # Run the testing suite
-    php phpunit.phar --bootstrap "$parentdir/autoload.php" "$parentdir/tests"
+    php phpunit.phar --bootstrap "$cdir/autoload.php" "$cdir/tests"
     EXITCODE=$?
     # Cleanup
     if [ "$clean" -eq 1 ]; then
