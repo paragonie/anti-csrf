@@ -272,7 +272,7 @@ class AntiCSRF
      */
     private static function noHTML($untrusted)
     {
-        return \htmlentities($untrusted, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return \htmlentities($untrusted, ENT_QUOTES, 'UTF-8');
     }
 
     /**
