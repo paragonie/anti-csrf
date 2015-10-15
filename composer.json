@@ -33,7 +33,6 @@
         "paragonie/random_compat": "^1.0.5"
     },
     "require-dev": {
-        "paragonie/random_compat": "dev-master",
         "phpunit/phpunit": "4.5.*"
     }
 }
