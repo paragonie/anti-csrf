@@ -30,7 +30,7 @@
     },
     "require": {
         "php": ">=5.4",
-        "paragonie/random_compat": "^1.0"
+        "paragonie/random_compat": "^1.0.5"
     },
     "require-dev": {
         "paragonie/random_compat": "dev-master",
