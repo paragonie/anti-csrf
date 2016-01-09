@@ -33,7 +33,11 @@ $twigEnv->addFunction(
     new \Twig_SimpleFunction(
         'form_token',
         function($lock_to = null) {
-            return AntiCSRF::insertToken($lock_to, false);
+            static $csrf;
+            if ($csrf === null) {
+                $csrf = new AntiCSRF;
+            }
+            return $csrf->insertToken($lock_to, false);
         },
         ['is_safe' => ['html']]
     )
@@ -53,8 +57,9 @@ Next, call the newly created form_token function from your templates.
 ## Validating a Request
 
 ```php
+    $csrf = new \ParagonIE\AntiCSRF\AntiCSRF;
     if (!empty($_POST)) {
-        if (\ParagonIE\AntiCSRF\AntiCSRF::validateRequest()) {
+        if ($csrf->validateRequest()) {
             // Valid
         } else {
             // Log a CSRF attack attempt
