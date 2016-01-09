@@ -258,7 +258,7 @@ class AntiCSRF
             }
         );
 
-        if (\count($_SESSION[self::SESSION_INDEX]) > self::$recycle_after) {
+        while (\count($_SESSION[self::SESSION_INDEX]) > self::$recycle_after) {
             // Let's knock off the oldest one
             \array_shift($_SESSION[self::SESSION_INDEX]);
         }
