@@ -63,8 +63,8 @@ class AntiCSRF
     public function __construct(array $post = null, array $session = null, array $server = null)
     {
         $this->post = $post === null ? $_POST : $post;
-        $this->session = $session === null ? $_SESSION : $session;
         $this->server = $server === null ? $_SERVER : $server;
+        $this->session = ($session === null && isset($_SESSION)) ? $_SESSION : (array) $session;
     }
 
     /**
