@@ -115,6 +115,21 @@ class AntiCSRF
 	    }
         return $ret;
     }
+    
+    public function getSessionIndex()
+    {
+        return $this->sessionIndex;
+    }
+    
+    public function getFormIndex()
+    {
+        return $this->formIndex;
+    }
+    
+    public function getFormToken()
+    {
+        return $this->formToken;
+    }
 
 	/**
 	 * Retrieve a token array for unit testing endpoints
