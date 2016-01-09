@@ -52,9 +52,16 @@ class AntiCSRF
     const SESSION_INDEX = 'CSRF';
     const HASH_ALGO = 'sha256';
 
-    public static $recycle_after = 65535;
-    public static $hmac_ip = true;
-    public static $expire_old = false;
+    public $recycle_after = 65535;
+    public $hmac_ip = true;
+    public $expire_old = false;
+
+    public function __construct(array $post = null, array $session = null, array $server = null)
+    {
+        $this->post = $post === null ? $_POST : $post;
+        $this->session = $session === null ? $_SESSION : $session;
+        $this->server = $server === null ? $_SERVER : $server;
+    }
 
     /**
      * Insert a CSRF token to a form
@@ -63,9 +70,9 @@ class AntiCSRF
      * @param boolean $echo if true, echo instead of returning
      * @return string
      */
-    public static function insertToken($lockto = null, $echo = true)
+    public function insertToken($lockto = null, $echo = true)
     {
-	    $token_array = self::getTokenArray($lockto);
+	    $token_array = $this->getTokenArray($lockto);
 	    $ret = \implode(
 	    	\array_map(
         		function($key, $value) {
@@ -91,15 +98,15 @@ class AntiCSRF
 	 *
 	 * @return array
 	 */
-	public static function getTokenArray($lockto = null)
+	public function getTokenArray($lockto = null)
 	{
-        if (!isset($_SESSION[self::SESSION_INDEX])) {
-            $_SESSION[self::SESSION_INDEX] = [];
+        if (!isset($this->session[self::SESSION_INDEX])) {
+            $this->session[self::SESSION_INDEX] = [];
         }
 
         if (empty($lockto)) {
-            $lockto = isset($_SERVER['REQUEST_URI'])
-                ? $_SERVER['REQUEST_URI']
+            $lockto = isset($this->server['REQUEST_URI'])
+                ? $this->server['REQUEST_URI']
                 : '/';
         }
 
@@ -107,15 +114,15 @@ class AntiCSRF
             $lockto = \substr($lockto, 0, strlen($lockto) - 1);
         }
 
-        list($index, $token) = self::generateToken($lockto);
+        list($index, $token) = $this->generateToken($lockto);
 
-        if (self::$hmac_ip !== false) {
+        if ($this->hmac_ip !== false) {
             // Use HMAC to only allow this particular IP to send this request
             $token = self::encode(
                 \hash_hmac(
                     self::HASH_ALGO,
-                    isset($_SERVER['REMOTE_ADDR'])
-                        ? $_SERVER['REMOTE_ADDR']
+                    isset($this->server['REMOTE_ADDR'])
+                        ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
                     \base64_decode($token),
                     true
@@ -130,40 +137,40 @@ class AntiCSRF
     }
 
     /**
-     * Validate a request based on $_SESSION and $_POST data
+     * Validate a request based on $this->session and $this->post data
      *
      * @return boolean
      */
-    public static function validateRequest()
+    public function validateRequest()
     {
-        if (!isset($_SESSION[self::SESSION_INDEX])) {
+        if (!isset($this->session[self::SESSION_INDEX])) {
             // We don't even have a session array initialized
-            $_SESSION[self::SESSION_INDEX] = [];
+            $this->session[self::SESSION_INDEX] = [];
             return false;
         }
 
-        if (!isset($_POST[self::FORM_INDEX]) || !isset($_POST[self::FORM_TOKEN])) {
+        if (!isset($this->post[self::FORM_INDEX]) || !isset($this->post[self::FORM_TOKEN])) {
             // User must transmit a complete index/token pair
             return false;
         }
 
         // Let's pull the POST data
-        $index = $_POST[self::FORM_INDEX];
-        $token = $_POST[self::FORM_TOKEN];
+        $index = $this->post[self::FORM_INDEX];
+        $token = $this->post[self::FORM_TOKEN];
 
-        if (!isset($_SESSION[self::SESSION_INDEX][$index])) {
+        if (!isset($this->session[self::SESSION_INDEX][$index])) {
             // CSRF Token not found
             return false;
         }
 
         // Grab the value stored at $index
-        $stored = $_SESSION[self::SESSION_INDEX][$index];
+        $stored = $this->session[self::SESSION_INDEX][$index];
 
         // We don't need this anymore
-        unset($_SESSION[self::SESSION_INDEX][$index]);
+        unset($this->session[self::SESSION_INDEX][$index]);
 
         // Which form action="" is this token locked to?
-        $lockto = $_SERVER['REQUEST_URI'];
+        $lockto = $this->server['REQUEST_URI'];
         if (\preg_match('#/$#', $lockto)) {
             // Trailing slashes are to be ignored
             $lockto = substr($lockto, 0, strlen($lockto) - 1);
@@ -175,7 +182,7 @@ class AntiCSRF
         }
 
         // This is the expected token value
-        if (self::$hmac_ip === false) {
+        if ($this->hmac_ip === false) {
             // We just stored it wholesale
             $expected = $stored['token'];
         } else {
@@ -183,8 +190,8 @@ class AntiCSRF
             $expected = self::encode(
                 \hash_hmac(
                     self::HASH_ALGO,
-                    isset($_SERVER['REMOTE_ADDR'])
-                        ? $_SERVER['REMOTE_ADDR']
+                    isset($this->server['REMOTE_ADDR'])
+                        ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
                     \base64_decode($stored['token']),
                     true
@@ -200,14 +207,14 @@ class AntiCSRF
      *
      * @param array $options
      */
-    public static function reconfigure(array $options = [])
+    public function reconfigure(array $options = [])
     {
         foreach ($options as $opt => $val) {
             switch ($opt) {
                 case 'recycle_after':
                 case 'hmac_ip':
                 case 'expire_old':
-                    self::${$opt} = $val;
+                    $this->${$opt} = $val;
                     break;
             }
         }
@@ -219,24 +226,24 @@ class AntiCSRF
      * @param string $lockto What URI endpoint this is valid for
      * @return array [string, string]
      */
-    private static function generateToken($lockto)
+    private function generateToken($lockto)
     {
         $index = self::encode(\random_bytes(18));
         $token = self::encode(\random_bytes(32));
 
-        $_SESSION[self::SESSION_INDEX][$index] = [
+        $this->session[self::SESSION_INDEX][$index] = [
             'created' => \intval(\date('YmdHis')),
-            'uri' => isset($_SERVER['REQUEST_URI'])
-                ? $_SERVER['REQUEST_URI']
-                : $_SERVER['SCRIPT_NAME'],
+            'uri' => isset($this->server['REQUEST_URI'])
+                ? $this->server['REQUEST_URI']
+                : $this->server['SCRIPT_NAME'],
             'token' => $token
         ];
         if (\preg_match('#/$#', $lockto)) {
             $lockto = self::subString($lockto, 0, self::stringLength($lockto) - 1);
         }
-        $_SESSION[self::SESSION_INDEX][$index]['lockto'] = $lockto;
+        $this->session[self::SESSION_INDEX][$index]['lockto'] = $lockto;
 
-        self::recycleTokens();
+        $this->recycleTokens();
         return [$index, $token];
     }
 
@@ -244,23 +251,23 @@ class AntiCSRF
      * Enforce an upper limit on the number of tokens stored in session state
      * by removing the oldest tokens first.
      */
-    private static function recycleTokens()
+    private function recycleTokens()
     {
-        if (!self::$expire_old) {
+        if (!$this->expire_old) {
             // This is turned off.
             return;
         }
         // Sort by creation time
         \uasort(
-            $_SESSION[self::SESSION_INDEX],
+            $this->session[self::SESSION_INDEX],
             function($a, $b) {
                 return $a['created'] - $b['created'];
             }
         );
 
-        if (\count($_SESSION[self::SESSION_INDEX]) > self::$recycle_after) {
+        if (\count($this->session[self::SESSION_INDEX]) > $this->recycle_after) {
             // Let's knock off the oldest one
-            \array_shift($_SESSION[self::SESSION_INDEX]);
+            \array_shift($this->session[self::SESSION_INDEX]);
         }
     }
 
