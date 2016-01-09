@@ -17,7 +17,7 @@ namespace ParagonIE\AntiCSRF;
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * ******************************************************************************
+ *******************************************************************************
  *
  * The MIT License (MIT)
  *
@@ -47,23 +47,37 @@ namespace ParagonIE\AntiCSRF;
  */
 class AntiCSRF
 {
-    const FORM_INDEX = '_CSRF_INDEX';
-    const FORM_TOKEN = '_CSRF_TOKEN';
-    const SESSION_INDEX = 'CSRF';
-    const HASH_ALGO = 'sha256';
+    protected $formIndex = '_CSRF_INDEX';
+    protected $formToken = '_CSRF_TOKEN';
+    protected $sessionIndex = 'CSRF';
+    protected $hashAlgo = 'sha256';
+    protected $recycle_after = 65535;
+    protected $hmac_ip = true;
+    protected $expire_old = false;
+    
+    // Injected; defaults to references to superglobals
+    protected $post;
+    protected $session;
+    protected $server;
 
-    public $recycle_after = 65535;
-    public $hmac_ip = true;
-    public $expire_old = false;
-
-    public $post;
-    public $session;
-    public $server;
-
-    public function __construct(array $post = null, array $session = null, array $server = null)
-    {
-        $this->post = $post === null ? $_POST : $post;
-        $this->server = $server === null ? $_SERVER : $server;
+    /**
+     * NULL is not a valid array type
+     * 
+     * @param array $post
+     * @param array $session
+     * @param array $server
+     */
+    public function __construct(
+        $post = null,
+        $session = null,
+        $server = null
+    ) {
+        $this->post = $post === null
+            ? $_POST
+            : $post;
+        $this->server = $server === null
+            ? $_SERVER
+            : $server;
 
         if ($session === null && isset($_SESSION)) {
             $this->session =& $_SESSION;
@@ -75,13 +89,13 @@ class AntiCSRF
     /**
      * Insert a CSRF token to a form
      *
-     * @param string $lockto This CSRF token is only valid for this HTTP request endpoint
+     * @param string $lockTo This CSRF token is only valid for this HTTP request endpoint
      * @param boolean $echo if true, echo instead of returning
      * @return string
      */
-    public function insertToken($lockto = null, $echo = true)
+    public function insertToken($lockTo = null, $echo = true)
     {
-	    $token_array = $this->getTokenArray($lockto);
+	    $token_array = $this->getTokenArray($lockTo);
 	    $ret = \implode(
 	    	\array_map(
         		function($key, $value) {
@@ -107,29 +121,29 @@ class AntiCSRF
 	 *
 	 * @return array
 	 */
-	public function getTokenArray($lockto = null)
+	public function getTokenArray($lockTo = null)
 	{
-        if (!isset($this->session[self::SESSION_INDEX])) {
-            $this->session[self::SESSION_INDEX] = [];
+        if (!isset($this->session[$this->sessionIndex])) {
+            $this->session[$this->sessionIndex] = [];
         }
 
-        if (empty($lockto)) {
-            $lockto = isset($this->server['REQUEST_URI'])
+        if (empty($lockTo)) {
+            $lockTo = isset($this->server['REQUEST_URI'])
                 ? $this->server['REQUEST_URI']
                 : '/';
         }
 
-        if (\preg_match('#/$#', $lockto)) {
-            $lockto = \substr($lockto, 0, strlen($lockto) - 1);
+        if (\preg_match('#/$#', $lockTo)) {
+            $lockTo = \substr($lockTo, 0, strlen($lockTo) - 1);
         }
 
-        list($index, $token) = $this->generateToken($lockto);
+        list($index, $token) = $this->generateToken($lockTo);
 
         if ($this->hmac_ip !== false) {
             // Use HMAC to only allow this particular IP to send this request
-            $token = self::encode(
+            $token = $this->encode(
                 \hash_hmac(
-                    self::HASH_ALGO,
+                    $this->hashAlgo,
                     isset($this->server['REMOTE_ADDR'])
                         ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
@@ -139,10 +153,10 @@ class AntiCSRF
             );
         }
 
-        return array(
-			self::FORM_INDEX => $index,
-			self::FORM_TOKEN => $token,
-		);
+        return [
+			$this->formIndex => $index,
+			$this->formToken => $token,
+		];
     }
 
     /**
@@ -152,40 +166,43 @@ class AntiCSRF
      */
     public function validateRequest()
     {
-        if (!isset($this->session[self::SESSION_INDEX])) {
+        if (!isset($this->session[$this->sessionIndex])) {
             // We don't even have a session array initialized
-            $this->session[self::SESSION_INDEX] = [];
+            $this->session[$this->sessionIndex] = [];
             return false;
         }
 
-        if (!isset($this->post[self::FORM_INDEX]) || !isset($this->post[self::FORM_TOKEN])) {
+        if (
+            !isset($this->post[$this->formIndex]) ||
+            !isset($this->post[$this->formToken])
+        ) {
             // User must transmit a complete index/token pair
             return false;
         }
 
         // Let's pull the POST data
-        $index = $this->post[self::FORM_INDEX];
-        $token = $this->post[self::FORM_TOKEN];
+        $index = $this->post[$this->formIndex];
+        $token = $this->post[$this->formToken];
 
-        if (!isset($this->session[self::SESSION_INDEX][$index])) {
+        if (!isset($this->session[$this->sessionIndex][$index])) {
             // CSRF Token not found
             return false;
         }
 
         // Grab the value stored at $index
-        $stored = $this->session[self::SESSION_INDEX][$index];
+        $stored = $this->session[$this->sessionIndex][$index];
 
         // We don't need this anymore
-        unset($this->session[self::SESSION_INDEX][$index]);
+        unset($this->session[$this->sessionIndex][$index]);
 
         // Which form action="" is this token locked to?
-        $lockto = $this->server['REQUEST_URI'];
-        if (\preg_match('#/$#', $lockto)) {
+        $lockTo = $this->server['REQUEST_URI'];
+        if (\preg_match('#/$#', $lockTo)) {
             // Trailing slashes are to be ignored
-            $lockto = substr($lockto, 0, strlen($lockto) - 1);
+            $lockTo = substr($lockTo, 0, strlen($lockTo) - 1);
         }
 
-        if (!self::hash_equals($lockto, $stored['lockto'])) {
+        if (!\hash_equals($lockTo, $stored['lockTo'])) {
             // Form target did not match the request this token is locked to!
             return false;
         }
@@ -196,7 +213,7 @@ class AntiCSRF
             $expected = $stored['token'];
         } else {
             // We mixed in the client IP address to generate the output
-            $expected = self::encode(
+            $expected = $this->encode(
                 \hash_hmac(
                     self::HASH_ALGO,
                     isset($this->server['REMOTE_ADDR'])
@@ -207,7 +224,7 @@ class AntiCSRF
                 )
             );
         }
-        return self::hash_equals($token, $expected);
+        return \hash_equals($token, $expected);
     }
 
     /**
@@ -220,37 +237,52 @@ class AntiCSRF
     {
         foreach ($options as $opt => $val) {
             switch ($opt) {
+                case 'formIndex':
+                case 'formToken':
+                case 'sessionIndex':
                 case 'recycle_after':
                 case 'hmac_ip':
                 case 'expire_old':
                     $this->${$opt} = $val;
                     break;
+                case 'hashAlgo':
+                    if (\in_array($val, \hash_algos())) {
+                        $this->hashAlgo = $val;
+                    }
+                    break;
             }
         }
+        return $this;
     }
 
     /**
      * Generate, store, and return the index and token
      *
-     * @param string $lockto What URI endpoint this is valid for
-     * @return array [string, string]
+     * @param string $lockTo What URI endpoint this is valid for
+     * @return string[]
      */
-    private function generateToken($lockto)
+    protected function generateToken($lockTo)
     {
-        $index = self::encode(\random_bytes(18));
-        $token = self::encode(\random_bytes(32));
+        $index = $this->encode(
+            \random_bytes(18)
+        );
+        $token = $this->encode(
+            \random_bytes(32)
+        );
 
-        $this->session[self::SESSION_INDEX][$index] = [
-            'created' => \intval(\date('YmdHis')),
+        $this->session[$this->sessionIndex][$index] = [
+            'created' => \intval(
+                \date('YmdHis')
+            ),
             'uri' => isset($this->server['REQUEST_URI'])
                 ? $this->server['REQUEST_URI']
                 : $this->server['SCRIPT_NAME'],
             'token' => $token
         ];
-        if (\preg_match('#/$#', $lockto)) {
-            $lockto = self::subString($lockto, 0, self::stringLength($lockto) - 1);
+        if (\preg_match('#/$#', $lockTo)) {
+            $lockTo = self::subString($lockTo, 0, self::stringLength($lockTo) - 1);
         }
-        $this->session[self::SESSION_INDEX][$index]['lockto'] = $lockto;
+        $this->session[$this->sessionIndex][$index]['lockTo'] = $lockTo;
 
         $this->recycleTokens();
         return [$index, $token];
@@ -260,7 +292,7 @@ class AntiCSRF
      * Enforce an upper limit on the number of tokens stored in session state
      * by removing the oldest tokens first.
      */
-    private function recycleTokens()
+    protected function recycleTokens()
     {
         if (!$this->expire_old) {
             // This is turned off.
@@ -268,16 +300,17 @@ class AntiCSRF
         }
         // Sort by creation time
         \uasort(
-            $this->session[self::SESSION_INDEX],
+            $this->session[$this->sessionIndex],
             function($a, $b) {
                 return $a['created'] - $b['created'];
             }
         );
 
-        while (\count($this->session[self::SESSION_INDEX]) > $this->recycle_after) {
+        while (\count($this->session[$this->sessionIndex]) > $this->recycle_after) {
             // Let's knock off the oldest one
-            \array_shift($this->session[self::SESSION_INDEX]);
+            \array_shift($this->session[$this->sessionIndex]);
         }
+        return $this;
     }
 
     /**
@@ -286,7 +319,7 @@ class AntiCSRF
      * @param string $untrusted
      * @return string
      */
-    private static function noHTML($untrusted)
+    protected static function noHTML($untrusted)
     {
         return \htmlentities($untrusted, ENT_QUOTES, 'UTF-8');
     }
@@ -298,28 +331,12 @@ class AntiCSRF
      * @param string $s
      * @return string
      */
-    private static function encode($s)
+    protected static function encode($s)
     {
-        return rtrim(base64_encode($s), '=');
-    }
-
-    /**
-     * Compare strings without leaking timing information.
-     * Use PHP's native hash_equals() if it is available.
-     * Otherwise, use a double-HMAC with a random nonce.
-     *
-     * @param string $a first string
-     * @param string $b second string
-     * @return boolean
-     */
-    private static function hash_equals($a, $b)
-    {
-        if (\function_exists('\\hash_equals')) {
-            return \hash_equals($a, $b);
-        }
-
-        $nonce = \random_bytes(32);
-        return \hash_hmac('sha256', $a, $nonce) === \hash_hmac('sha256', $b, $nonce);
+        return \rtrim(
+            \base64_encode($s),
+            '='
+        );
     }
 
     /**
@@ -330,7 +347,7 @@ class AntiCSRF
      * @param int|null $length
      * @return string
      */
-    private static function subString($str, $start, $length = null)
+    protected static function subString($str, $start, $length = null)
     {
         if (\function_exists('\\mb_substr')) {
             return \mb_substr($str, $start, $length, '8bit');
@@ -344,7 +361,7 @@ class AntiCSRF
      * @param string $str
      * @return string
      */
-    private static function stringLength($str)
+    protected static function stringLength($str)
     {
         if (\function_exists('\\mb_substr')) {
             return \mb_strlen($str, '8bit');
