@@ -9,20 +9,20 @@ class AntiCSRFTest extends PHPUnit_Framework_TestCase
      */
     public function testInsertToken()
     {
-        @session_start();
+        $post = [];
+        $session = [];
+        $server = $_SERVER;
 
-        ob_start();
-        $csrft = new AntiCSRF();
-        $csrft->insertToken();
-        $token_html = ob_get_clean();
+        $csrft = new AntiCSRF($post, $session, $server);
+        $token_html = $csrft->insertToken(null, false);
+        
         $idx = $csrft->getSessionIndex();
-
         $this->assertFalse(
             empty($csrft->session[$idx])
         );
 
         $this->assertFalse(
-            empty($_SESSION[$idx])
+            empty($session[$idx])
         );
 
         $this->assertContains("<input", $token_html);
@@ -41,9 +41,12 @@ class AntiCSRFTest extends PHPUnit_Framework_TestCase
         $this->assertFalse(
             empty($csrft->session[$csrft->getSessionIndex()])
         );
-        $this->assertSame( [
-	        $csrft->getFormIndex(),
-	        $csrft->getFormToken(),
-        ], array_keys( $result ) );
+        $this->assertSame( 
+            [
+                $csrft->getFormIndex(),
+                $csrft->getFormToken(),
+            ], 
+            \array_keys($result)
+        );
     }
 }

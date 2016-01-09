@@ -56,9 +56,9 @@ class AntiCSRF
     protected $expire_old = false;
     
     // Injected; defaults to references to superglobals
-    protected $post;
-    protected $session;
-    protected $server;
+    public $post;
+    public $session;
+    public $server;
 
     /**
      * NULL is not a valid array type
@@ -68,21 +68,26 @@ class AntiCSRF
      * @param array $server
      */
     public function __construct(
-        $post = null,
-        $session = null,
-        $server = null
+        &$post = null,
+        &$session = null,
+        &$server = null
     ) {
-        $this->post = $post === null
-            ? $_POST
-            : $post;
-        $this->server = $server === null
-            ? $_SERVER
-            : $server;
+        if ($post !== null) {
+            $this->post =& $post;
+        } else {
+            $this->post =& $_POST;
+        }
+        
+        if ($server !== null) {
+            $this->server =& $server;
+        } else {
+            $this->server =& $_SERVER;
+        }
 
         if ($session === null && isset($_SESSION)) {
             $this->session =& $_SESSION;
         } else {
-            $this->session = $session;
+            $this->session =& $session;
         }
     }
 
