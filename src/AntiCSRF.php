@@ -56,6 +56,10 @@ class AntiCSRF
     public $hmac_ip = true;
     public $expire_old = false;
 
+    public $post;
+    public $session;
+    public $server;
+
     public function __construct(array $post = null, array $session = null, array $server = null)
     {
         $this->post = $post === null ? $_POST : $post;

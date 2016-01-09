@@ -12,7 +12,8 @@ class AntiCSRFTest extends PHPUnit_Framework_TestCase
         @session_start();
 
         ob_start();
-        AntiCSRF::insertToken();
+        $csrft = new AntiCSRF();
+        $csrft->insertToken();
         $token_html = ob_get_clean();
 
         $this->assertFalse(
@@ -28,7 +29,8 @@ class AntiCSRFTest extends PHPUnit_Framework_TestCase
     {
         @session_start();
 
-        $result = AntiCSRF::getTokenArray();
+        $csrft = new AntiCSRF();
+        $result = $csrft->getTokenArray();
 
         $this->assertFalse(
             empty($_SESSION[AntiCSRF::SESSION_INDEX])
