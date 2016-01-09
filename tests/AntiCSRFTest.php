@@ -17,8 +17,13 @@ class AntiCSRFTest extends PHPUnit_Framework_TestCase
         $token_html = ob_get_clean();
 
         $this->assertFalse(
+            empty($csrft->session[AntiCSRF::SESSION_INDEX])
+        );
+
+        $this->assertFalse(
             empty($_SESSION[AntiCSRF::SESSION_INDEX])
         );
+
         $this->assertContains("<input", $token_html);
     }
 
@@ -33,7 +38,7 @@ class AntiCSRFTest extends PHPUnit_Framework_TestCase
         $result = $csrft->getTokenArray();
 
         $this->assertFalse(
-            empty($_SESSION[AntiCSRF::SESSION_INDEX])
+            empty($csrft->session[AntiCSRF::SESSION_INDEX])
         );
         $this->assertSame( [
 	        AntiCSRF::FORM_INDEX,

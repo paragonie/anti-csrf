@@ -64,7 +64,12 @@ class AntiCSRF
     {
         $this->post = $post === null ? $_POST : $post;
         $this->server = $server === null ? $_SERVER : $server;
-        $this->session = ($session === null && isset($_SESSION)) ? $_SESSION : (array) $session;
+
+        if ($session === null && isset($_SESSION)) {
+            $this->session =& $_SESSION;
+        } else {
+            $this->session = $session;
+        }
     }
 
     /**
