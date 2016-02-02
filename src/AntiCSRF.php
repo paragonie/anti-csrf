@@ -235,7 +235,7 @@ class AntiCSRF
             // We mixed in the client IP address to generate the output
             $expected = $this->encode(
                 \hash_hmac(
-                    self::HASH_ALGO,
+                    $this->hashAlgo,
                     isset($this->server['REMOTE_ADDR'])
                         ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
