@@ -1,6 +1,9 @@
 <?php
 namespace ParagonIE\AntiCSRF;
 
+use \ParagonIE\ConstantTime\Base64;
+use \ParagonIE\ConstantTime\Binary;
+
 /**
  * Copyright (c) 2015 - 2016 Paragon Initiative Enterprises <https://paragonie.com>
  *
@@ -43,7 +46,7 @@ namespace ParagonIE\AntiCSRF;
  *
  *
  * If you would like to use this library under different terms, please
- * contact Resonant Core to inquire about a license exemption.
+ * contact Paragon Initiative Enterprises to inquire about a license exemption.
  */
 class AntiCSRF
 {
@@ -105,9 +108,9 @@ class AntiCSRF
 	    	\array_map(
         		function($key, $value) {
     			    return "<!--\n-->".
-    		            "<input type=\"hidden\"".
-    		            " name=\"".$key."\"".
-    		            " value=\"".self::noHTML($value)."\"".
+    		            "<input type=\"hidden\"" .
+    		            " name=\"".$key."\"" .
+    		            " value=\"".self::noHTML($value)."\"" .
     		            " />";
     	        },
     	        \array_keys($token_array),
@@ -120,17 +123,26 @@ class AntiCSRF
 	    }
         return $ret;
     }
-    
+
+    /**
+     * @return string
+     */
     public function getSessionIndex()
     {
         return $this->sessionIndex;
     }
-    
+
+    /**
+     * @return string
+     */
     public function getFormIndex()
     {
         return $this->formIndex;
     }
-    
+
+    /**
+     * @return string
+     */
     public function getFormToken()
     {
         return $this->formToken;
@@ -154,20 +166,20 @@ class AntiCSRF
         }
 
         if (\preg_match('#/$#', $lockTo)) {
-            $lockTo = \substr($lockTo, 0, strlen($lockTo) - 1);
+            $lockTo = Binary::safeSubstr($lockTo, 0, Binary::safeStrlen($lockTo) - 1);
         }
 
         list($index, $token) = $this->generateToken($lockTo);
 
         if ($this->hmac_ip !== false) {
             // Use HMAC to only allow this particular IP to send this request
-            $token = $this->encode(
+            $token = Base64::encode(
                 \hash_hmac(
                     $this->hashAlgo,
                     isset($this->server['REMOTE_ADDR'])
                         ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
-                    \base64_decode($token),
+                    Base64::decode($token),
                     true
                 )
             );
@@ -209,6 +221,10 @@ class AntiCSRF
             return false;
         }
 
+        if (!\is_string($index) || !\is_string($token)) {
+            return false;
+        }
+
         // Grab the value stored at $index
         $stored = $this->session[$this->sessionIndex][$index];
 
@@ -219,7 +235,11 @@ class AntiCSRF
         $lockTo = $this->server['REQUEST_URI'];
         if (\preg_match('#/$#', $lockTo)) {
             // Trailing slashes are to be ignored
-            $lockTo = substr($lockTo, 0, strlen($lockTo) - 1);
+            $lockTo = Binary::safeSubstr(
+                $lockTo,
+                0,
+                Binary::safeStrlen($lockTo) - 1
+            );
         }
 
         if (!\hash_equals($lockTo, $stored['lockTo'])) {
@@ -233,7 +253,7 @@ class AntiCSRF
             $expected = $stored['token'];
         } else {
             // We mixed in the client IP address to generate the output
-            $expected = $this->encode(
+            $expected = Base64::encode(
                 \hash_hmac(
                     $this->hashAlgo,
                     isset($this->server['REMOTE_ADDR'])
@@ -252,6 +272,7 @@ class AntiCSRF
      * Only use this if you know what you are doing.
      *
      * @param array $options
+     * @return self
      */
     public function reconfigure(array $options = [])
     {
@@ -283,12 +304,8 @@ class AntiCSRF
      */
     protected function generateToken($lockTo)
     {
-        $index = $this->encode(
-            \random_bytes(18)
-        );
-        $token = $this->encode(
-            \random_bytes(32)
-        );
+        $index = Base64::encode(\random_bytes(18));
+        $token = Base64::encode(\random_bytes(33));
 
         $this->session[$this->sessionIndex][$index] = [
             'created' => \intval(
@@ -300,7 +317,11 @@ class AntiCSRF
             'token' => $token
         ];
         if (\preg_match('#/$#', $lockTo)) {
-            $lockTo = self::subString($lockTo, 0, self::stringLength($lockTo) - 1);
+            $lockTo = Binary::safeSubstr(
+                $lockTo,
+                0,
+                Binary::safeStrlen($lockTo) - 1
+            );
         }
         $this->session[$this->sessionIndex][$index]['lockTo'] = $lockTo;
 
@@ -311,12 +332,14 @@ class AntiCSRF
     /**
      * Enforce an upper limit on the number of tokens stored in session state
      * by removing the oldest tokens first.
+     *
+     * @return self
      */
     protected function recycleTokens()
     {
         if (!$this->expire_old) {
             // This is turned off.
-            return;
+            return $this;
         }
         // Sort by creation time
         \uasort(
@@ -342,50 +365,5 @@ class AntiCSRF
     protected static function noHTML($untrusted)
     {
         return \htmlentities($untrusted, ENT_QUOTES, 'UTF-8');
-    }
-
-    /**
-     * Encode string with base64, but strip padding.
-     * PHP base64_decode does not croak on that.
-     *
-     * @param string $s
-     * @return string
-     */
-    protected static function encode($s)
-    {
-        return \rtrim(
-            \base64_encode($s),
-            '='
-        );
-    }
-
-    /**
-     * Binary-safe substr() implementation
-     *
-     * @param string $str
-     * @param int $start
-     * @param int|null $length
-     * @return string
-     */
-    protected static function subString($str, $start, $length = null)
-    {
-        if (\function_exists('\\mb_substr')) {
-            return \mb_substr($str, $start, $length, '8bit');
-        }
-        return \substr($str, $start, $length);
-    }
-
-    /**
-     * Binary-safe strlen() implementation
-     *
-     * @param string $str
-     * @return string
-     */
-    protected static function stringLength($str)
-    {
-        if (\function_exists('\\mb_substr')) {
-            return \mb_strlen($str, '8bit');
-        }
-        return \strlen($str);
     }
 }
