@@ -1,5 +1,4 @@
 <?php
-
 use \ParagonIE\AntiCSRF\AntiCSRF;
 
 class AntiCSRFTest extends PHPUnit_Framework_TestCase
@@ -14,7 +13,7 @@ class AntiCSRFTest extends PHPUnit_Framework_TestCase
         $server = $_SERVER;
 
         $csrft = new AntiCSRF($post, $session, $server);
-        $token_html = $csrft->insertToken(null, false);
+        $token_html = $csrft->insertToken('', false);
         
         $idx = $csrft->getSessionIndex();
         $this->assertFalse(

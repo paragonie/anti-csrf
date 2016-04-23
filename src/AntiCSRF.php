@@ -1,8 +1,11 @@
 <?php
+declare(strict_types=1);
 namespace ParagonIE\AntiCSRF;
 
-use \ParagonIE\ConstantTime\Base64;
-use \ParagonIE\ConstantTime\Binary;
+use \ParagonIE\ConstantTime\{
+    Base64,
+    Binary
+};
 
 /**
  * Copyright (c) 2015 - 2016 Paragon Initiative Enterprises <https://paragonie.com>
@@ -98,10 +101,10 @@ class AntiCSRF
      * Insert a CSRF token to a form
      *
      * @param string $lockTo This CSRF token is only valid for this HTTP request endpoint
-     * @param boolean $echo if true, echo instead of returning
+     * @param bool $echo if true, echo instead of returning
      * @return string
      */
-    public function insertToken($lockTo = null, $echo = true)
+    public function insertToken(string $lockTo = '', bool $echo = true): string
     {
 	    $token_array = $this->getTokenArray($lockTo);
 	    $ret = \implode(
@@ -127,7 +130,7 @@ class AntiCSRF
     /**
      * @return string
      */
-    public function getSessionIndex()
+    public function getSessionIndex(): string
     {
         return $this->sessionIndex;
     }
@@ -135,7 +138,7 @@ class AntiCSRF
     /**
      * @return string
      */
-    public function getFormIndex()
+    public function getFormIndex(): string
     {
         return $this->formIndex;
     }
@@ -143,7 +146,7 @@ class AntiCSRF
     /**
      * @return string
      */
-    public function getFormToken()
+    public function getFormToken(): string
     {
         return $this->formToken;
     }
@@ -151,9 +154,10 @@ class AntiCSRF
 	/**
 	 * Retrieve a token array for unit testing endpoints
 	 *
+     * @param string $lockTo
 	 * @return array
 	 */
-	public function getTokenArray($lockTo = null)
+	public function getTokenArray(string $lockTo = ''): array
 	{
         if (!isset($this->session[$this->sessionIndex])) {
             $this->session[$this->sessionIndex] = [];
@@ -194,9 +198,9 @@ class AntiCSRF
     /**
      * Validate a request based on $this->session and $this->post data
      *
-     * @return boolean
+     * @return bool
      */
-    public function validateRequest()
+    public function validateRequest(): bool
     {
         if (!isset($this->session[$this->sessionIndex])) {
             // We don't even have a session array initialized
@@ -259,7 +263,7 @@ class AntiCSRF
                     isset($this->server['REMOTE_ADDR'])
                         ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
-                    \base64_decode($stored['token']),
+                    Bass64::decode($stored['token']),
                     true
                 )
             );
@@ -274,7 +278,7 @@ class AntiCSRF
      * @param array $options
      * @return self
      */
-    public function reconfigure(array $options = [])
+    public function reconfigure(array $options = []): self
     {
         foreach ($options as $opt => $val) {
             switch ($opt) {
@@ -302,7 +306,7 @@ class AntiCSRF
      * @param string $lockTo What URI endpoint this is valid for
      * @return string[]
      */
-    protected function generateToken($lockTo)
+    protected function generateToken(string $lockTo): array
     {
         $index = Base64::encode(\random_bytes(18));
         $token = Base64::encode(\random_bytes(33));
@@ -344,8 +348,8 @@ class AntiCSRF
         // Sort by creation time
         \uasort(
             $this->session[$this->sessionIndex],
-            function($a, $b) {
-                return $a['created'] - $b['created'];
+            function ($a, $b) {
+                return $a['created'] <=> $b['created'];
             }
         );
 
@@ -362,7 +366,7 @@ class AntiCSRF
      * @param string $untrusted
      * @return string
      */
-    protected static function noHTML($untrusted)
+    protected static function noHTML(string $untrusted): string
     {
         return \htmlentities($untrusted, ENT_QUOTES, 'UTF-8');
     }
