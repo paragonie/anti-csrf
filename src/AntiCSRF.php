@@ -263,7 +263,7 @@ class AntiCSRF
                     isset($this->server['REMOTE_ADDR'])
                         ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
-                    Bass64::decode($stored['token']),
+                    Base64::decode($stored['token']),
                     true
                 )
             );
