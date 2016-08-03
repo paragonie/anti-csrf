@@ -60,7 +60,7 @@ class AntiCSRF
     protected $recycle_after = 65535;
     protected $hmac_ip = true;
     protected $expire_old = false;
-    
+
     // Injected; defaults to references to superglobals
     public $post;
     public $session;
@@ -68,7 +68,7 @@ class AntiCSRF
 
     /**
      * NULL is not a valid array type
-     * 
+     *
      * @param array $post
      * @param array $session
      * @param array $server
@@ -83,7 +83,7 @@ class AntiCSRF
         } else {
             $this->post =& $_POST;
         }
-        
+
         if ($server !== null) {
             $this->server =& $server;
         } else {
@@ -106,24 +106,24 @@ class AntiCSRF
      */
     public function insertToken(string $lockTo = '', bool $echo = true): string
     {
-	    $token_array = $this->getTokenArray($lockTo);
-	    $ret = \implode(
-	    	\array_map(
-        		function($key, $value) {
-    			    return "<!--\n-->".
-    		            "<input type=\"hidden\"" .
-    		            " name=\"".$key."\"" .
-    		            " value=\"".self::noHTML($value)."\"" .
-    		            " />";
-    	        },
-    	        \array_keys($token_array),
-    	        $token_array
+        $token_array = $this->getTokenArray($lockTo);
+        $ret = \implode(
+            \array_map(
+                function($key, $value) {
+                    return "<!--\n-->".
+                        "<input type=\"hidden\"" .
+                        " name=\"".$key."\"" .
+                        " value=\"".self::noHTML($value)."\"" .
+                        " />";
+                },
+                \array_keys($token_array),
+                $token_array
             )
         );
-	    if ($echo) {
-		    echo $ret;
-		    return null;
-	    }
+        if ($echo) {
+            echo $ret;
+            return null;
+        }
         return $ret;
     }
 
@@ -151,14 +151,14 @@ class AntiCSRF
         return $this->formToken;
     }
 
-	/**
-	 * Retrieve a token array for unit testing endpoints
-	 *
+    /**
+     * Retrieve a token array for unit testing endpoints
+     *
      * @param string $lockTo
-	 * @return array
-	 */
-	public function getTokenArray(string $lockTo = ''): array
-	{
+     * @return array
+     */
+    public function getTokenArray(string $lockTo = ''): array
+    {
         if (!isset($this->session[$this->sessionIndex])) {
             $this->session[$this->sessionIndex] = [];
         }
@@ -190,9 +190,9 @@ class AntiCSRF
         }
 
         return [
-			$this->formIndex => $index,
-			$this->formToken => $token,
-		];
+            $this->formIndex => $index,
+            $this->formToken => $token,
+        ];
     }
 
     /**
