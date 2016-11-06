@@ -53,12 +53,39 @@ use \ParagonIE\ConstantTime\{
  */
 class AntiCSRF
 {
+    /**
+     * @var string
+     */
     protected $formIndex = '_CSRF_INDEX';
+
+    /**
+     * @var string
+     */
     protected $formToken = '_CSRF_TOKEN';
+
+    /**
+     * @var string
+     */
     protected $sessionIndex = 'CSRF';
+
+    /**
+     * @var string
+     */
     protected $hashAlgo = 'sha256';
+
+    /**
+     * @var int
+     */
     protected $recycle_after = 65535;
+
+    /**
+     * @var bool
+     */
     protected $hmac_ip = true;
+
+    /**
+     * @var bool
+     */
     protected $expire_old = false;
 
     // Injected; defaults to references to superglobals
@@ -112,8 +139,8 @@ class AntiCSRF
                 function($key, $value) {
                     return "<!--\n-->".
                         "<input type=\"hidden\"" .
-                        " name=\"".$key."\"" .
-                        " value=\"".self::noHTML($value)."\"" .
+                        " name=\"" . self::noHTML($key) . "\"" .
+                        " value=\"" . self::noHTML($value) . "\"" .
                         " />";
                 },
                 \array_keys($token_array),
@@ -122,7 +149,7 @@ class AntiCSRF
         );
         if ($echo) {
             echo $ret;
-            return null;
+            return '';
         }
         return $ret;
     }
@@ -348,8 +375,8 @@ class AntiCSRF
         // Sort by creation time
         \uasort(
             $this->session[$this->sessionIndex],
-            function ($a, $b) {
-                return $a['created'] <=> $b['created'];
+            function ($a, $b):int {
+                return (int) ($a['created'] <=> $b['created']);
             }
         );
 
