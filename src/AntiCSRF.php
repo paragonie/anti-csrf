@@ -315,7 +315,7 @@ class AntiCSRF
                 case 'recycle_after':
                 case 'hmac_ip':
                 case 'expire_old':
-                    $this->${$opt} = $val;
+                    $this->$opt = $val;
                     break;
                 case 'hashAlgo':
                     if (\in_array($val, \hash_algos())) {
