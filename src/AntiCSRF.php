@@ -88,6 +88,16 @@ class AntiCSRF
      */
     protected $expire_old = false;
 
+    /**
+     * @var bool
+     */
+    protected $single_use = true;
+
+    /**
+     * @var int
+     */
+    protected $max_age = 1800;
+
     // Injected; defaults to references to superglobals
     public $post;
     public $session;
@@ -259,8 +269,18 @@ class AntiCSRF
         // Grab the value stored at $index
         $stored = $this->session[$this->sessionIndex][$index];
 
-        // We don't need this anymore
-        unset($this->session[$this->sessionIndex][$index]);
+        // Make sure the token is young and fresh
+        if ((\time() - $this->session[$this->sessionIndex][$index]) > 
+                $this->max_age) {
+            // Remove and fail if not
+            unset($this->session[$this->sessionIndex][$index]);
+            return false;
+        }
+
+        // Nuke it if single_use is true
+        if ($this->single_use) {
+            unset($this->session[$this->sessionIndex][$index]);
+        }
 
         // Which form action="" is this token locked to?
         $lockTo = $this->server['REQUEST_URI'];
@@ -315,6 +335,8 @@ class AntiCSRF
                 case 'recycle_after':
                 case 'hmac_ip':
                 case 'expire_old':
+                case 'single_use':
+                case 'max_age':
                     $this->$opt = $val;
                     break;
                 case 'hashAlgo':
@@ -339,9 +361,7 @@ class AntiCSRF
         $token = Base64::encode(\random_bytes(33));
 
         $this->session[$this->sessionIndex][$index] = [
-            'created' => \intval(
-                \date('YmdHis')
-            ),
+            'created' => \time(),
             'uri' => isset($this->server['REQUEST_URI'])
                 ? $this->server['REQUEST_URI']
                 : $this->server['SCRIPT_NAME'],
@@ -372,14 +392,23 @@ class AntiCSRF
             // This is turned off.
             return $this;
         }
-        // Sort by creation time
+        // Logan's Run on the old tokens
+        $this->session[$this->sessionIndex] = array_filter(
+            $this->session[$this->sessionIndex],
+            function ($a) use($this) {
+                return (time() - $a['created'] < $this->max_age);
+            }
+        );
+        
+        // Sort what's left by creation time
         \uasort(
             $this->session[$this->sessionIndex],
             function ($a, $b):int {
                 return (int) ($a['created'] <=> $b['created']);
             }
         );
-
+        
+        // Trim of excess
         while (\count($this->session[$this->sessionIndex]) > $this->recycle_after) {
             // Let's knock off the oldest one
             \array_shift($this->session[$this->sessionIndex]);
