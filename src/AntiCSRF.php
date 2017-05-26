@@ -393,10 +393,11 @@ class AntiCSRF
             return $this;
         }
         // Logan's Run on the old tokens
+        $ma = $this->max_age;
         $this->session[$this->sessionIndex] = array_filter(
             $this->session[$this->sessionIndex],
-            function ($a) use($this) {
-                return (time() - $a['created'] < $this->max_age);
+            function ($a) use($ma) {
+                return (time() - $a['created'] < $ma);
             }
         );
         
