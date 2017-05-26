@@ -270,8 +270,8 @@ class AntiCSRF
         $stored = $this->session[$this->sessionIndex][$index];
 
         // Make sure the token is young and fresh
-        if ((\time() - $this->session[$this->sessionIndex][$index]) > 
-                $this->max_age) {
+        if ((\time() - $this->session[$this->sessionIndex][$index]['created']) >
+            $this->max_age) {
             // Remove and fail if not
             unset($this->session[$this->sessionIndex][$index]);
             return false;
