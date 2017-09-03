@@ -6,6 +6,7 @@ use \ParagonIE\ConstantTime\{
     Base64,
     Binary
 };
+use PhpParser\Error;
 
 /**
  * Copyright (c) 2015 - 2016 Paragon Initiative Enterprises <https://paragonie.com>
@@ -89,9 +90,21 @@ class AntiCSRF
     protected $expire_old = false;
 
     // Injected; defaults to references to superglobals
-    public $post;
-    public $session;
-    public $server;
+
+    /**
+     * @var array
+     */
+    public $post = [];
+
+    /**
+     * @var array
+     */
+    public $session = [];
+
+    /**
+     * @var array
+     */
+    public $server = [];
 
     /**
      * NULL is not a valid array type
@@ -99,28 +112,31 @@ class AntiCSRF
      * @param array $post
      * @param array $session
      * @param array $server
+     * @throws Error
      */
     public function __construct(
         &$post = null,
         &$session = null,
         &$server = null
     ) {
-        if ($post !== null) {
+        if (!\is_null($post)) {
             $this->post =& $post;
         } else {
             $this->post =& $_POST;
         }
 
-        if ($server !== null) {
+        if (!\is_null($server)) {
             $this->server =& $server;
         } else {
             $this->server =& $_SERVER;
         }
 
-        if ($session === null && isset($_SESSION)) {
+        if (!\is_null($session)) {
+            $this->session =& $session;
+        } elseif (!\is_null($_SESSION) && isset($_SESSION)) {
             $this->session =& $_SESSION;
         } else {
-            $this->session =& $session;
+            throw new Error('No session available for persistence');
         }
     }
 
@@ -136,7 +152,7 @@ class AntiCSRF
         $token_array = $this->getTokenArray($lockTo);
         $ret = \implode(
             \array_map(
-                function($key, $value) {
+                function($key, $value): string {
                     return "<!--\n-->".
                         "<input type=\"hidden\"" .
                         " name=\"" . self::noHTML($key) . "\"" .
@@ -210,7 +226,7 @@ class AntiCSRF
                     isset($this->server['REMOTE_ADDR'])
                         ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
-                    Base64::decode($token),
+                    (string) Base64::decode($token),
                     true
                 )
             );
@@ -290,7 +306,7 @@ class AntiCSRF
                     isset($this->server['REMOTE_ADDR'])
                         ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
-                    Base64::decode($stored['token']),
+                    (string) Base64::decode($stored['token']),
                     true
                 )
             );
