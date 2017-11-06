@@ -6,7 +6,7 @@ use \ParagonIE\ConstantTime\{
     Base64,
     Binary
 };
-use PhpParser\Error;
+use Error;
 
 /**
  * Copyright (c) 2015 - 2016 Paragon Initiative Enterprises <https://paragonie.com>
