@@ -138,9 +138,11 @@ class AntiCSRF
 
         if (!\is_null($session)) {
             $this->session =& $session;
-        } elseif (!\is_null($_SESSION) && isset($_SESSION)) {
-            $this->session =& $_SESSION;
-            $this->useNativeSession = true;
+        } elseif (isset($_SESSION)) {
+            if (\is_array($_SESSION)) {
+                $this->session =& $_SESSION;
+                $this->useNativeSession = true;
+            }
         } else {
             throw new Error('No session available for persistence');
         }
