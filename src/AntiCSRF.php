@@ -180,7 +180,7 @@ class AntiCSRF
         $token_array = $this->getTokenArray($lockTo);
         $ret = \implode(
             \array_map(
-                function($key, $value): string {
+                function(string $key, string $value): string {
                     return "<!--\n-->".
                         "<input type=\"hidden\"" .
                         " name=\"" . self::noHTML($key) . "\"" .
@@ -517,7 +517,7 @@ class AntiCSRF
             // Sort by creation time
             \uasort(
                 $_SESSION[$this->sessionIndex],
-                function ($a, $b):int {
+                function (array $a, array $b): int {
                     return (int) ($a['created'] <=> $b['created']);
                 }
             );
@@ -529,7 +529,7 @@ class AntiCSRF
             // Sort by creation time
             \uasort(
                 $this->session[$this->sessionIndex],
-                function ($a, $b):int {
+                function (array $a, array $b): int {
                     return (int) ($a['created'] <=> $b['created']);
                 }
             );
