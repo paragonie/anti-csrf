@@ -149,6 +149,26 @@ class AntiCSRF
     }
 
     /**
+     * Allow derived classes to inject arguments.
+     *
+     * @param array $args
+     * @return array
+     */
+    protected function buildBasicToken(array $args = []): array
+    {
+        return $args;
+    }
+
+    /**
+     * @param array $token
+     * @return bool
+     */
+    public function deleteToken(array $token): bool
+    {
+        return true;
+    }
+
+    /**
      * Insert a CSRF token to a form
      *
      * @param string $lockTo This CSRF token is only valid for this HTTP request endpoint
@@ -288,7 +308,9 @@ class AntiCSRF
         $stored = $_SESSION[$this->sessionIndex][$index];
 
         // We don't need this anymore
-        unset($_SESSION[$this->sessionIndex][$index]);
+        if ($this->deleteToken($this->session[$this->sessionIndex][$index])) {
+            unset($_SESSION[$this->sessionIndex][$index]);
+        }
 
         // Which form action="" is this token locked to?
         $lockTo = $this->server['REQUEST_URI'];
@@ -368,7 +390,9 @@ class AntiCSRF
         $stored = $this->session[$this->sessionIndex][$index];
 
         // We don't need this anymore
-        unset($this->session[$this->sessionIndex][$index]);
+        if ($this->deleteToken($this->session[$this->sessionIndex][$index])) {
+            unset($this->session[$this->sessionIndex][$index]);
+        }
 
         // Which form action="" is this token locked to?
         $lockTo = $this->server['REQUEST_URI'];
@@ -447,7 +471,7 @@ class AntiCSRF
         $index = Base64::encode(\random_bytes(18));
         $token = Base64::encode(\random_bytes(33));
 
-        $new = [
+        $new = $this->buildBasicToken([
             'created' => \intval(
                 \date('YmdHis')
             ),
@@ -455,7 +479,7 @@ class AntiCSRF
                 ? $this->server['REQUEST_URI']
                 : $this->server['SCRIPT_NAME'],
             'token' => $token
-        ];
+        ]);
 
         if (\preg_match('#/$#', $lockTo)) {
             $lockTo = Binary::safeSubstr(
