@@ -89,6 +89,11 @@ class AntiCSRF
      */
     protected $expire_old = false;
 
+    /**
+     * @var string
+     */
+    protected $lock_type = 'REQUEST_URI';
+
     // Injected; defaults to references to superglobals
 
     /**
@@ -220,6 +225,14 @@ class AntiCSRF
     public function getFormToken(): string
     {
         return $this->formToken;
+    }
+
+    /**
+     * @return string
+     */
+    public function getLockType(): string
+    {
+        return $this->lock_type;
     }
 
     /**
@@ -395,7 +408,7 @@ class AntiCSRF
         }
 
         // Which form action="" is this token locked to?
-        $lockTo = $this->server['REQUEST_URI'];
+        $lockTo = $this->server[$this->lock_type];
         if (\preg_match('#/$#', $lockTo)) {
             // Trailing slashes are to be ignored
             $lockTo = Binary::safeSubstr(
@@ -453,6 +466,11 @@ class AntiCSRF
                 case 'hashAlgo':
                     if (\in_array($val, \hash_algos())) {
                         $this->hashAlgo = $val;
+                    }
+                    break;
+                case 'lock_type':
+                    if (\in_array($val,array('REQUEST_URI','PATH_INFO'))) {
+                        $this->lock_type=$val;
                     }
                     break;
             }
@@ -551,4 +569,5 @@ class AntiCSRF
     {
         return \htmlentities($untrusted, ENT_QUOTES, 'UTF-8');
     }
+
 }
