@@ -4,7 +4,7 @@ use \ParagonIE\AntiCSRF\AntiCSRF;
 class AntiCSRFTest extends PHPUnit_Framework_TestCase
 {
     /**
-     * @covers \Resonantcore\AntiCSRF\AntiCSRF::insertToken()
+     * @covers AntiCSRF::insertToken()
      */
     public function testInsertToken()
     {
@@ -28,13 +28,21 @@ class AntiCSRFTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers \Resonantcore\AntiCSRF\AntiCSRF::getTokenArray()
+     * @covers AntiCSRF::getTokenArray()
      */
     public function testGetTokenArray()
     {
         @session_start();
 
-        $csrft = new AntiCSRF();
+        try {
+            $csrft = new AntiCSRF();
+        } catch (\Throwable $ex) {
+            $post = [];
+            $session = [];
+            $server = $_SERVER;
+
+            $csrft = new AntiCSRF($post, $session, $server);
+        }
         $result = $csrft->getTokenArray();
 
         $this->assertFalse(
