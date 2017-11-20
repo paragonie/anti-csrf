@@ -6,6 +6,7 @@ use \ParagonIE\ConstantTime\{
     Base64,
     Binary
 };
+use Error;
 
 /**
  * Copyright (c) 2015 - 2016 Paragon Initiative Enterprises <https://paragonie.com>
@@ -94,9 +95,26 @@ class AntiCSRF
     protected $lock_type = 'REQUEST_URI';
 
     // Injected; defaults to references to superglobals
-    public $post;
-    public $session;
-    public $server;
+
+    /**
+     * @var array
+     */
+    public $post = [];
+
+    /**
+     * @var array
+     */
+    public $session = [];
+
+    /**
+     * @var bool
+     */
+    public $useNativeSession = false;
+
+    /**
+     * @var array
+     */
+    public $server = [];
 
     /**
      * NULL is not a valid array type
@@ -104,29 +122,55 @@ class AntiCSRF
      * @param array $post
      * @param array $session
      * @param array $server
+     * @throws Error
      */
     public function __construct(
         &$post = null,
         &$session = null,
         &$server = null
     ) {
-        if ($post !== null) {
+        if (!\is_null($post)) {
             $this->post =& $post;
         } else {
             $this->post =& $_POST;
         }
 
-        if ($server !== null) {
+        if (!\is_null($server)) {
             $this->server =& $server;
         } else {
             $this->server =& $_SERVER;
         }
 
-        if ($session === null && isset($_SESSION)) {
-            $this->session =& $_SESSION;
-        } else {
+        if (!\is_null($session)) {
             $this->session =& $session;
+        } elseif (isset($_SESSION)) {
+            if (\is_array($_SESSION)) {
+                $this->session =& $_SESSION;
+                $this->useNativeSession = true;
+            }
+        } else {
+            throw new Error('No session available for persistence');
         }
+    }
+
+    /**
+     * Allow derived classes to inject arguments.
+     *
+     * @param array $args
+     * @return array
+     */
+    protected function buildBasicToken(array $args = []): array
+    {
+        return $args;
+    }
+
+    /**
+     * @param array $token
+     * @return bool
+     */
+    public function deleteToken(array $token): bool
+    {
+        return true;
     }
 
     /**
@@ -141,7 +185,7 @@ class AntiCSRF
         $token_array = $this->getTokenArray($lockTo);
         $ret = \implode(
             \array_map(
-                function($key, $value) {
+                function(string $key, string $value): string {
                     return "<!--\n-->".
                         "<input type=\"hidden\"" .
                         " name=\"" . self::noHTML($key) . "\"" .
@@ -199,7 +243,11 @@ class AntiCSRF
      */
     public function getTokenArray(string $lockTo = ''): array
     {
-        if (!isset($this->session[$this->sessionIndex])) {
+        if ($this->useNativeSession) {
+            if (!isset($_SESSION[$this->sessionIndex])) {
+                $_SESSION[$this->sessionIndex] = [];
+            }
+        } elseif (!isset($this->session[$this->sessionIndex])) {
             $this->session[$this->sessionIndex] = [];
         }
 
@@ -223,7 +271,7 @@ class AntiCSRF
                     isset($this->server['REMOTE_ADDR'])
                         ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
-                    Base64::decode($token),
+                    (string) Base64::decode($token),
                     true
                 )
             );
@@ -236,12 +284,94 @@ class AntiCSRF
     }
 
     /**
+     * Validate a request based on $_SESSION and $_POST data
+     *
+     * @return bool
+     */
+    public function validateRequestNative(): bool
+    {
+        if (!isset($_SESSION[$this->sessionIndex])) {
+            // We don't even have a session array initialized
+            $_SESSION[$this->sessionIndex] = [];
+            return false;
+        }
+
+        if (
+            !isset($this->post[$this->formIndex]) ||
+            !isset($this->post[$this->formToken])
+        ) {
+            // User must transmit a complete index/token pair
+            return false;
+        }
+
+        // Let's pull the POST data
+        $index = $_POST[$this->formIndex];
+        $token = $_POST[$this->formToken];
+
+        if (!isset($_SESSION[$this->sessionIndex][$index])) {
+            // CSRF Token not found
+            return false;
+        }
+
+        if (!\is_string($index) || !\is_string($token)) {
+            return false;
+        }
+
+        // Grab the value stored at $index
+        $stored = $_SESSION[$this->sessionIndex][$index];
+
+        // We don't need this anymore
+        if ($this->deleteToken($this->session[$this->sessionIndex][$index])) {
+            unset($_SESSION[$this->sessionIndex][$index]);
+        }
+
+        // Which form action="" is this token locked to?
+        $lockTo = $this->server['REQUEST_URI'];
+        if (\preg_match('#/$#', $lockTo)) {
+            // Trailing slashes are to be ignored
+            $lockTo = Binary::safeSubstr(
+                $lockTo,
+                0,
+                Binary::safeStrlen($lockTo) - 1
+            );
+        }
+
+        if (!\hash_equals($lockTo, $stored['lockTo'])) {
+            // Form target did not match the request this token is locked to!
+            return false;
+        }
+
+        // This is the expected token value
+        if ($this->hmac_ip === false) {
+            // We just stored it wholesale
+            $expected = $stored['token'];
+        } else {
+            // We mixed in the client IP address to generate the output
+            $expected = Base64::encode(
+                \hash_hmac(
+                    $this->hashAlgo,
+                    isset($this->server['REMOTE_ADDR'])
+                        ? $this->server['REMOTE_ADDR']
+                        : '127.0.0.1',
+                    (string) Base64::decode($stored['token']),
+                    true
+                )
+            );
+        }
+        return \hash_equals($token, $expected);
+    }
+
+    /**
      * Validate a request based on $this->session and $this->post data
      *
      * @return bool
      */
     public function validateRequest(): bool
     {
+        if ($this->useNativeSession) {
+            return $this->validateRequestNative();
+        }
+
         if (!isset($this->session[$this->sessionIndex])) {
             // We don't even have a session array initialized
             $this->session[$this->sessionIndex] = [];
@@ -273,7 +403,9 @@ class AntiCSRF
         $stored = $this->session[$this->sessionIndex][$index];
 
         // We don't need this anymore
-        unset($this->session[$this->sessionIndex][$index]);
+        if ($this->deleteToken($this->session[$this->sessionIndex][$index])) {
+            unset($this->session[$this->sessionIndex][$index]);
+        }
 
         // Which form action="" is this token locked to?
         $lockTo = $this->server[$this->lock_type];
@@ -303,7 +435,7 @@ class AntiCSRF
                     isset($this->server['REMOTE_ADDR'])
                         ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
-                    Base64::decode($stored['token']),
+                    (string) Base64::decode($stored['token']),
                     true
                 )
             );
@@ -325,6 +457,7 @@ class AntiCSRF
                 case 'formIndex':
                 case 'formToken':
                 case 'sessionIndex':
+                case 'useNativeSession':
                 case 'recycle_after':
                 case 'hmac_ip':
                 case 'expire_old':
@@ -356,7 +489,7 @@ class AntiCSRF
         $index = Base64::encode(\random_bytes(18));
         $token = Base64::encode(\random_bytes(33));
 
-        $this->session[$this->sessionIndex][$index] = [
+        $new = $this->buildBasicToken([
             'created' => \intval(
                 \date('YmdHis')
             ),
@@ -364,7 +497,8 @@ class AntiCSRF
                 ? $this->server['REQUEST_URI']
                 : $this->server['SCRIPT_NAME'],
             'token' => $token
-        ];
+        ]);
+
         if (\preg_match('#/$#', $lockTo)) {
             $lockTo = Binary::safeSubstr(
                 $lockTo,
@@ -372,7 +506,13 @@ class AntiCSRF
                 Binary::safeStrlen($lockTo) - 1
             );
         }
-        $this->session[$this->sessionIndex][$index]['lockTo'] = $lockTo;
+        if ($this->useNativeSession) {
+            $_SESSION[$this->sessionIndex][$index] = $new;
+            $_SESSION[$this->sessionIndex][$index]['lockTo'] = $lockTo;
+        } else {
+            $this->session[$this->sessionIndex][$index] = $new;
+            $this->session[$this->sessionIndex][$index]['lockTo'] = $lockTo;
+        }
 
         $this->recycleTokens();
         return [$index, $token];
@@ -390,17 +530,31 @@ class AntiCSRF
             // This is turned off.
             return $this;
         }
-        // Sort by creation time
-        \uasort(
-            $this->session[$this->sessionIndex],
-            function ($a, $b):int {
-                return (int) ($a['created'] <=> $b['created']);
-            }
-        );
 
-        while (\count($this->session[$this->sessionIndex]) > $this->recycle_after) {
-            // Let's knock off the oldest one
-            \array_shift($this->session[$this->sessionIndex]);
+        if ($this->useNativeSession) {
+            // Sort by creation time
+            \uasort(
+                $_SESSION[$this->sessionIndex],
+                function (array $a, array $b): int {
+                    return (int) ($a['created'] <=> $b['created']);
+                }
+            );
+            while (\count($_SESSION[$this->sessionIndex]) > $this->recycle_after) {
+                // Let's knock off the oldest one
+                \array_shift($_SESSION[$this->sessionIndex]);
+            }
+        } else {
+            // Sort by creation time
+            \uasort(
+                $this->session[$this->sessionIndex],
+                function (array $a, array $b): int {
+                    return (int) ($a['created'] <=> $b['created']);
+                }
+            );
+            while (\count($this->session[$this->sessionIndex]) > $this->recycle_after) {
+                // Let's knock off the oldest one
+                \array_shift($this->session[$this->sessionIndex]);
+            }
         }
         return $this;
     }
