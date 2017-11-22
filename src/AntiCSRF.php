@@ -188,7 +188,7 @@ class AntiCSRF
                 function(string $key, string $value): string {
                     return "<!--\n-->".
                         "<input type=\"hidden\"" .
-                        " name=\"" . self::noHTML($key) . "\"" .
+                        " name=\"" . $key . "\"" .
                         " value=\"" . self::noHTML($value) . "\"" .
                         " />";
                 },
