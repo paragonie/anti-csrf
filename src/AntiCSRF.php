@@ -2,14 +2,14 @@
 declare(strict_types=1);
 namespace ParagonIE\AntiCSRF;
 
-use \ParagonIE\ConstantTime\{
-    Base64,
+use ParagonIE\ConstantTime\{
+    Base64UrlSafe,
     Binary
 };
 use Error;
 
 /**
- * Copyright (c) 2015 - 2016 Paragon Initiative Enterprises <https://paragonie.com>
+ * Copyright (c) 2015 - 2017 Paragon Initiative Enterprises <https://paragonie.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -28,7 +28,7 @@ use Error;
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 - 2016 Paragon Initiative Enterprises
+ * Copyright (c) 2015 - 2017 Paragon Initiative Enterprises
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -265,13 +265,13 @@ class AntiCSRF
 
         if ($this->hmac_ip !== false) {
             // Use HMAC to only allow this particular IP to send this request
-            $token = Base64::encode(
+            $token = Base64UrlSafe::encode(
                 \hash_hmac(
                     $this->hashAlgo,
                     isset($this->server['REMOTE_ADDR'])
                         ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
-                    (string) Base64::decode($token),
+                    (string) Base64UrlSafe::decode($token),
                     true
                 )
             );
@@ -347,13 +347,13 @@ class AntiCSRF
             $expected = $stored['token'];
         } else {
             // We mixed in the client IP address to generate the output
-            $expected = Base64::encode(
+            $expected = Base64UrlSafe::encode(
                 \hash_hmac(
                     $this->hashAlgo,
                     isset($this->server['REMOTE_ADDR'])
                         ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
-                    (string) Base64::decode($stored['token']),
+                    (string) Base64UrlSafe::decode($stored['token']),
                     true
                 )
             );
@@ -429,13 +429,13 @@ class AntiCSRF
             $expected = $stored['token'];
         } else {
             // We mixed in the client IP address to generate the output
-            $expected = Base64::encode(
+            $expected = Base64UrlSafe::encode(
                 \hash_hmac(
                     $this->hashAlgo,
                     isset($this->server['REMOTE_ADDR'])
                         ? $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
-                    (string) Base64::decode($stored['token']),
+                    (string) Base64UrlSafe::decode($stored['token']),
                     true
                 )
             );
@@ -486,8 +486,8 @@ class AntiCSRF
      */
     protected function generateToken(string $lockTo): array
     {
-        $index = Base64::encode(\random_bytes(18));
-        $token = Base64::encode(\random_bytes(33));
+        $index = Base64UrlSafe::encode(\random_bytes(18));
+        $token = Base64UrlSafe::encode(\random_bytes(33));
 
         $new = $this->buildBasicToken([
             'created' => \intval(
@@ -567,7 +567,7 @@ class AntiCSRF
      */
     protected static function noHTML(string $untrusted): string
     {
-        return \htmlentities($untrusted, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return \htmlentities($untrusted, ENT_QUOTES, 'UTF-8');
     }
 
 }
