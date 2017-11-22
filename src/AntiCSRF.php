@@ -567,7 +567,7 @@ class AntiCSRF
      */
     protected static function noHTML(string $untrusted): string
     {
-        return \htmlentities($untrusted, ENT_QUOTES, 'UTF-8');
+        return \htmlentities($untrusted, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 
 }
