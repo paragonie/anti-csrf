@@ -9,7 +9,7 @@ use ParagonIE\ConstantTime\{
 use Error;
 
 /**
- * Copyright (c) 2015 - 2017 Paragon Initiative Enterprises <https://paragonie.com>
+ * Copyright (c) 2015 - 2018 Paragon Initiative Enterprises <https://paragonie.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -28,7 +28,7 @@ use Error;
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2015 - 2017 Paragon Initiative Enterprises
+ * Copyright (c) 2015 - 2018 Paragon Initiative Enterprises
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
