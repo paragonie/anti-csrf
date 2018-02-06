@@ -2,6 +2,7 @@
 <psalm
     stopOnFirstError="false"
     useDocblockTypes="true"
+    totallyTyped="true"
 >
     <projectFiles>
         <directory name="src" />

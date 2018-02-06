@@ -240,6 +240,9 @@ class AntiCSRF
      *
      * @param string $lockTo
      * @return array
+     *
+     * @throws \Exception
+     * @throws \TypeError
      */
     public function getTokenArray(string $lockTo = ''): array
     {
@@ -252,6 +255,7 @@ class AntiCSRF
         }
 
         if (empty($lockTo)) {
+            /** @var string $lockTo */
             $lockTo = isset($this->server['REQUEST_URI'])
                 ? $this->server['REQUEST_URI']
                 : '/';
@@ -269,7 +273,7 @@ class AntiCSRF
                 \hash_hmac(
                     $this->hashAlgo,
                     isset($this->server['REMOTE_ADDR'])
-                        ? $this->server['REMOTE_ADDR']
+                        ? (string) $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
                     (string) Base64UrlSafe::decode($token),
                     true
@@ -283,99 +287,27 @@ class AntiCSRF
         ];
     }
 
-    /**
-     * Validate a request based on $_SESSION and $_POST data
-     *
-     * @return bool
-     */
-    public function validateRequestNative(): bool
-    {
-        if (!isset($_SESSION[$this->sessionIndex])) {
-            // We don't even have a session array initialized
-            $_SESSION[$this->sessionIndex] = [];
-            return false;
-        }
-
-        if (
-            !isset($this->post[$this->formIndex]) ||
-            !isset($this->post[$this->formToken])
-        ) {
-            // User must transmit a complete index/token pair
-            return false;
-        }
-
-        // Let's pull the POST data
-        $index = $_POST[$this->formIndex];
-        $token = $_POST[$this->formToken];
-
-        if (!isset($_SESSION[$this->sessionIndex][$index])) {
-            // CSRF Token not found
-            return false;
-        }
-
-        if (!\is_string($index) || !\is_string($token)) {
-            return false;
-        }
-
-        // Grab the value stored at $index
-        $stored = $_SESSION[$this->sessionIndex][$index];
-
-        // We don't need this anymore
-        if ($this->deleteToken($this->session[$this->sessionIndex][$index])) {
-            unset($_SESSION[$this->sessionIndex][$index]);
-        }
-
-        // Which form action="" is this token locked to?
-        $lockTo = $this->server['REQUEST_URI'];
-        if (\preg_match('#/$#', $lockTo)) {
-            // Trailing slashes are to be ignored
-            $lockTo = Binary::safeSubstr(
-                $lockTo,
-                0,
-                Binary::safeStrlen($lockTo) - 1
-            );
-        }
-
-        if (!\hash_equals($lockTo, $stored['lockTo'])) {
-            // Form target did not match the request this token is locked to!
-            return false;
-        }
-
-        // This is the expected token value
-        if ($this->hmac_ip === false) {
-            // We just stored it wholesale
-            $expected = $stored['token'];
-        } else {
-            // We mixed in the client IP address to generate the output
-            $expected = Base64UrlSafe::encode(
-                \hash_hmac(
-                    $this->hashAlgo,
-                    isset($this->server['REMOTE_ADDR'])
-                        ? $this->server['REMOTE_ADDR']
-                        : '127.0.0.1',
-                    (string) Base64UrlSafe::decode($stored['token']),
-                    true
-                )
-            );
-        }
-        return \hash_equals($token, $expected);
-    }
 
     /**
      * Validate a request based on $this->session and $this->post data
      *
      * @return bool
+     * @throws \TypeError
      */
     public function validateRequest(): bool
     {
         if ($this->useNativeSession) {
-            return $this->validateRequestNative();
-        }
-
-        if (!isset($this->session[$this->sessionIndex])) {
-            // We don't even have a session array initialized
-            $this->session[$this->sessionIndex] = [];
-            return false;
+            if (!isset($_SESSION[$this->sessionIndex])) {
+                return false;
+            }
+            /** @var array<string, array<string, mixed>> $sess */
+            $sess =& $_SESSION[$this->sessionIndex];
+        } else {
+            if (!isset($this->session[$this->sessionIndex])) {
+                return false;
+            }
+            /** @var array<string, array<string, mixed>> $sess */
+            $sess =& $this->session[$this->sessionIndex];
         }
 
         if (
@@ -387,10 +319,15 @@ class AntiCSRF
         }
 
         // Let's pull the POST data
+        /** @var string $index */
         $index = $this->post[$this->formIndex];
+        /** @var string $token */
         $token = $this->post[$this->formToken];
+        if (!\is_string($index) || !\is_string($token)) {
+            return false;
+        }
 
-        if (!isset($this->session[$this->sessionIndex][$index])) {
+        if (!isset($sess[$index])) {
             // CSRF Token not found
             return false;
         }
@@ -400,14 +337,16 @@ class AntiCSRF
         }
 
         // Grab the value stored at $index
-        $stored = $this->session[$this->sessionIndex][$index];
+        /** @var array<string, mixed> $stored */
+        $stored = $sess[$index];
 
         // We don't need this anymore
-        if ($this->deleteToken($this->session[$this->sessionIndex][$index])) {
-            unset($this->session[$this->sessionIndex][$index]);
+        if ($this->deleteToken($sess[$index])) {
+            unset($sess[$index]);
         }
 
         // Which form action="" is this token locked to?
+        /** @var string $lockTo */
         $lockTo = $this->server[$this->lock_type];
         if (\preg_match('#/$#', $lockTo)) {
             // Trailing slashes are to be ignored
@@ -418,7 +357,7 @@ class AntiCSRF
             );
         }
 
-        if (!\hash_equals($lockTo, $stored['lockTo'])) {
+        if (!\hash_equals($lockTo, (string) $stored['lockTo'])) {
             // Form target did not match the request this token is locked to!
             return false;
         }
@@ -426,16 +365,18 @@ class AntiCSRF
         // This is the expected token value
         if ($this->hmac_ip === false) {
             // We just stored it wholesale
+            /** @var string $expected */
             $expected = $stored['token'];
         } else {
             // We mixed in the client IP address to generate the output
+            /** @var string $expected */
             $expected = Base64UrlSafe::encode(
                 \hash_hmac(
                     $this->hashAlgo,
                     isset($this->server['REMOTE_ADDR'])
-                        ? $this->server['REMOTE_ADDR']
+                        ? (string) $this->server['REMOTE_ADDR']
                         : '127.0.0.1',
-                    (string) Base64UrlSafe::decode($stored['token']),
+                    (string) Base64UrlSafe::decode((string) $stored['token']),
                     true
                 )
             );
@@ -452,6 +393,8 @@ class AntiCSRF
      */
     public function reconfigure(array $options = []): self
     {
+        /** @var string $opt */
+        /** @var string $val */
         foreach ($options as $opt => $val) {
             switch ($opt) {
                 case 'formIndex':
@@ -461,16 +404,17 @@ class AntiCSRF
                 case 'recycle_after':
                 case 'hmac_ip':
                 case 'expire_old':
+                    /** @psalm-suppress MixedAssignment */
                     $this->$opt = $val;
                     break;
                 case 'hashAlgo':
-                    if (\in_array($val, \hash_algos())) {
-                        $this->hashAlgo = $val;
+                    if (\in_array($val, \hash_algos(), true)) {
+                        $this->hashAlgo = (string) $val;
                     }
                     break;
                 case 'lock_type':
-                    if (\in_array($val,array('REQUEST_URI','PATH_INFO'))) {
-                        $this->lock_type=$val;
+                    if (\in_array($val, array('REQUEST_URI','PATH_INFO'), true)) {
+                        $this->lock_type = (string) $val;
                     }
                     break;
             }
@@ -483,6 +427,8 @@ class AntiCSRF
      *
      * @param string $lockTo What URI endpoint this is valid for
      * @return string[]
+     * @throws \TypeError
+     * @throws \Exception
      */
     protected function generateToken(string $lockTo): array
     {
@@ -506,13 +452,16 @@ class AntiCSRF
                 Binary::safeStrlen($lockTo) - 1
             );
         }
+
         if ($this->useNativeSession) {
-            $_SESSION[$this->sessionIndex][$index] = $new;
-            $_SESSION[$this->sessionIndex][$index]['lockTo'] = $lockTo;
+            /** @var array<string, array<string, string|int>> $sess */
+            $sess =& $_SESSION[$this->sessionIndex];
         } else {
-            $this->session[$this->sessionIndex][$index] = $new;
-            $this->session[$this->sessionIndex][$index]['lockTo'] = $lockTo;
+            /** @var array<string, array<string, string|int>> $sess */
+            $sess =& $this->session[$this->sessionIndex];
         }
+        $sess[$index] = $new;
+        $sess[$index]['lockTo'] = $lockTo;
 
         $this->recycleTokens();
         return [$index, $token];
@@ -532,29 +481,22 @@ class AntiCSRF
         }
 
         if ($this->useNativeSession) {
-            // Sort by creation time
-            \uasort(
-                $_SESSION[$this->sessionIndex],
-                function (array $a, array $b): int {
-                    return (int) ($a['created'] <=> $b['created']);
-                }
-            );
-            while (\count($_SESSION[$this->sessionIndex]) > $this->recycle_after) {
-                // Let's knock off the oldest one
-                \array_shift($_SESSION[$this->sessionIndex]);
-            }
+            /** @var array<string, array<string, string|int>> $sess */
+            $sess =& $_SESSION[$this->sessionIndex];
         } else {
-            // Sort by creation time
-            \uasort(
-                $this->session[$this->sessionIndex],
-                function (array $a, array $b): int {
-                    return (int) ($a['created'] <=> $b['created']);
-                }
-            );
-            while (\count($this->session[$this->sessionIndex]) > $this->recycle_after) {
-                // Let's knock off the oldest one
-                \array_shift($this->session[$this->sessionIndex]);
+            /** @var array<string, array<string, string|int>> $sess */
+            $sess =& $this->session[$this->sessionIndex];
+        }
+        // Sort by creation time
+        \uasort(
+            $sess,
+            function (array $a, array $b): int {
+                return (int) ($a['created'] <=> $b['created']);
             }
+        );
+        while (\count($sess) > $this->recycle_after) {
+            // Let's knock off the oldest one
+            \array_shift($sess);
         }
         return $this;
     }

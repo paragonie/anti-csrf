@@ -19,7 +19,7 @@ namespace ParagonIE\AntiCSRF;
 class Reusable extends AntiCSRF
 {
     /**
-     * @var \DateInterval
+     * @var \DateInterval|null
      */
     protected $tokenLifetime = null;
 
@@ -54,6 +54,8 @@ class Reusable extends AntiCSRF
      */
     public function reconfigure(array $options = []): AntiCSRF
     {
+        /** @var string $opt */
+        /** @var \DateInterval $val */
         foreach ($options as $opt => $val) {
             switch ($opt) {
                 case 'tokenLifetime':
@@ -67,7 +69,7 @@ class Reusable extends AntiCSRF
     }
 
     /**
-     * @param array $token
+     * @param array<string, string> $token
      * @return bool
      */
     public function deleteToken(array $token): bool
