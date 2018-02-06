@@ -179,6 +179,8 @@ class AntiCSRF
      * @param string $lockTo This CSRF token is only valid for this HTTP request endpoint
      * @param bool $echo if true, echo instead of returning
      * @return string
+     * @throws \Exception
+     * @throws \TypeError
      */
     public function insertToken(string $lockTo = '', bool $echo = true): string
     {
@@ -511,5 +513,4 @@ class AntiCSRF
     {
         return \htmlentities($untrusted, ENT_QUOTES, 'UTF-8');
     }
-
 }
