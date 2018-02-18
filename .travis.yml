@@ -9,4 +9,4 @@ install:
 
 - composer self-update && composer update
 
-script: ./run-tests.sh
+script: vendor/bin/phpunit
