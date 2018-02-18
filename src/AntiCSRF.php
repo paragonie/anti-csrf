@@ -57,7 +57,7 @@ class AntiCSRF
     protected $recycle_after = 65535;
     protected $hmac_ip = true;
     protected $expire_old = false;
-    
+
     // Injected; defaults to references to superglobals
     public $post;
     public $session;
@@ -65,7 +65,7 @@ class AntiCSRF
 
     /**
      * NULL is not a valid array type
-     * 
+     *
      * @param array $post
      * @param array $session
      * @param array $server
@@ -80,7 +80,7 @@ class AntiCSRF
         } else {
             $this->post =& $_POST;
         }
-        
+
         if ($server !== null) {
             $this->server =& $server;
         } else {
@@ -284,7 +284,7 @@ class AntiCSRF
                 case 'recycle_after':
                 case 'hmac_ip':
                 case 'expire_old':
-                    $this->${$opt} = $val;
+                    $this->$opt = $val;
                     break;
                 case 'hashAlgo':
                     if (\in_array($val, \hash_algos())) {
