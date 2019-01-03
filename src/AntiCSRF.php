@@ -313,8 +313,8 @@ class AntiCSRF
         }
 
         if (
-            !isset($this->post[$this->formIndex]) ||
-            !isset($this->post[$this->formToken])
+            empty($this->post[$this->formIndex]) ||
+            empty($this->post[$this->formToken])
         ) {
             // User must transmit a complete index/token pair
             return false;
