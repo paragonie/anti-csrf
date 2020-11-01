@@ -7,6 +7,12 @@ use ParagonIE\ConstantTime\{
     Binary
 };
 use Error;
+use ParagonIE\AntiCSRF\Exception\AntiCSRFException;
+use ParagonIE\AntiCSRF\Exception\FormLockException;
+use ParagonIE\AntiCSRF\Exception\FormPostException;
+use ParagonIE\AntiCSRF\Exception\TokenHashException;
+use ParagonIE\AntiCSRF\Exception\TokenIndexNotInSessionException;
+use ParagonIE\AntiCSRF\Exception\TokenNotInSessionException;
 
 /**
  * Copyright (c) 2015 - 2018 Paragon Initiative Enterprises <https://paragonie.com>
@@ -298,26 +304,50 @@ class AntiCSRF
      */
     public function validateRequest(): bool
     {
+        try {
+            return true;
+        } catch (AntiCSRFException $ex) {
+        }
+
+        return false;
+    }
+
+    /**
+     * Validate a request based on $this->session and $this->post data
+     * Throws on validation failure
+     *
+     * @return void
+     * @throws \TypeError
+     * @throws TokenIndexNotInSessionException
+     * @throws FormPostException
+     * @throws TokenNotInSessionException
+     * @throws FormLockException
+     * @throws TokenHashException
+     */
+    public function validateRequestOrThrow()
+    {
         if ($this->useNativeSession) {
             if (!isset($_SESSION[$this->sessionIndex])) {
-                return false;
+                throw TokenIndexNotInSessionException::fromNative($this->sessionIndex);
             }
             /** @var array<string, array<string, mixed>> $sess */
             $sess =& $_SESSION[$this->sessionIndex];
         } else {
             if (!isset($this->session[$this->sessionIndex])) {
-                return false;
+                throw TokenIndexNotInSessionException::fromConstructor($this->sessionIndex);
             }
             /** @var array<string, array<string, mixed>> $sess */
             $sess =& $this->session[$this->sessionIndex];
         }
 
-        if (
-            empty($this->post[$this->formIndex]) ||
-            empty($this->post[$this->formToken])
-        ) {
+        if (empty($this->post[$this->formIndex])) {
             // User must transmit a complete index/token pair
-            return false;
+            throw FormPostException::missingIndex($this->formIndex);
+        }
+
+        if (empty($this->post[$this->formToken])) {
+            // User must transmit a complete index/token pair
+            throw FormPostException::missingToken($this->formToken);
         }
 
         // Let's pull the POST data
@@ -325,13 +355,17 @@ class AntiCSRF
         $index = $this->post[$this->formIndex];
         /** @var string $token */
         $token = $this->post[$this->formToken];
-        if (!\is_string($index) || !\is_string($token)) {
-            return false;
+        if (!\is_string($index)) {
+            throw FormPostException::indexTypeError($index);
+        }
+
+        if (!\is_string($token)) {
+            throw FormPostException::tokenTypeError($index);
         }
 
         if (!isset($sess[$index])) {
             // CSRF Token not found
-            return false;
+            throw TokenNotInSessionException::create($index);
         }
 
         // Grab the value stored at $index
@@ -357,7 +391,7 @@ class AntiCSRF
 
         if (!\hash_equals($lockTo, (string) $stored['lockTo'])) {
             // Form target did not match the request this token is locked to!
-            return false;
+            throw FormLockException::create($lockTo);
         }
 
         // This is the expected token value
@@ -379,7 +413,10 @@ class AntiCSRF
                 )
             );
         }
-        return \hash_equals($token, $expected);
+
+        if (!\hash_equals($token, $expected)) {
+            throw TokenHashException::create($token);
+        }
     }
 
     /**
