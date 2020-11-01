@@ -334,10 +334,6 @@ class AntiCSRF
             return false;
         }
 
-        if (!\is_string($index) || !\is_string($token)) {
-            return false;
-        }
-
         // Grab the value stored at $index
         /** @var array<string, mixed> $stored */
         $stored = $sess[$index];
