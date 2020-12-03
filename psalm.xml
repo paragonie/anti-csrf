@@ -12,5 +12,9 @@
         <MoreSpecificImplementedParamType errorLevel="info" />
         <RedundantCondition errorLevel="suppress" />
         <RedundantConditionGivenDocblockType errorLevel="suppress" />
+        <RedundantCast errorLevel="info" />
+        <DocblockTypeContradiction errorLevel="info" />
+        <TypeDoesNotContainType errorLevel="info" />
+        <MixedArgumentTypeCoercion errorLevel="info" />
     </issueHandlers>
 </psalm>
