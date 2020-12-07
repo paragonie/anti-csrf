@@ -1,7 +1,11 @@
 <?php
-use \ParagonIE\AntiCSRF\AntiCSRF;
+use ParagonIE\AntiCSRF\AntiCSRF;
+use PHPUnit\Framework\TestCase;
 
-class AntiCSRFTest extends PHPUnit_Framework_TestCase
+/**
+ * Class AntiCSRFTest
+ */
+class AntiCSRFTest extends TestCase
 {
     /**
      * @covers AntiCSRF::insertToken()
@@ -24,7 +28,9 @@ class AntiCSRFTest extends PHPUnit_Framework_TestCase
             empty($session[$idx])
         );
 
-        $this->assertContains("<input", $token_html);
+        $this->assertNotFalse(
+            strpos($token_html, "<input")
+        );
     }
 
     /**
