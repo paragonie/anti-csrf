@@ -87,6 +87,11 @@ class AntiCSRF
     /**
      * @var bool
      */
+    protected $hmac_ua = true;
+
+    /**
+     * @var bool
+     */
     protected $expire_old = false;
 
     /**
@@ -269,14 +274,12 @@ class AntiCSRF
 
         list($index, $token) = $this->generateToken($lockTo);
 
-        if ($this->hmac_ip !== false) {
+        if ($this->hmac_ip !== false || $this->hmac_ua !== false) {
             // Use HMAC to only allow this particular IP to send this request
             $token = Base64UrlSafe::encode(
                 \hash_hmac(
                     $this->hashAlgo,
-                    isset($this->server['REMOTE_ADDR'])
-                        ? (string) $this->server['REMOTE_ADDR']
-                        : '127.0.0.1',
+                    (($this->hmac_ip !== false && $this->hmac_ua !== false) ? (isset($this->server['REMOTE_ADDR']) ? (string) $this->server['REMOTE_ADDR'] : '127.0.0.1').(isset($this->server['HTTP_USER_AGENT']) ? (string) $this->server['HTTP_USER_AGENT'] : 'Mozilla') : (($this->hmac_ip !== true && $this->hmac_ua !== false) ? (isset($this->server['HTTP_USER_AGENT']) ? (string) $this->server['HTTP_USER_AGENT'] : 'Mozilla') : (isset($this->server['REMOTE_ADDR']) ? (string) $this->server['REMOTE_ADDR'] : '127.0.0.1'))),
                     (string) Base64UrlSafe::decode($token),
                     true
                 )
@@ -365,7 +368,7 @@ class AntiCSRF
         }
 
         // This is the expected token value
-        if ($this->hmac_ip === false) {
+        if ($this->hmac_ip === false && $this -> hmac_ua === false) {
             // We just stored it wholesale
             /** @var string $expected */
             $expected = $stored['token'];
@@ -375,9 +378,7 @@ class AntiCSRF
             $expected = Base64UrlSafe::encode(
                 \hash_hmac(
                     $this->hashAlgo,
-                    isset($this->server['REMOTE_ADDR'])
-                        ? (string) $this->server['REMOTE_ADDR']
-                        : '127.0.0.1',
+                    (($this->hmac_ip !== false && $this->hmac_ua !== false) ? (isset($this->server['REMOTE_ADDR']) ? (string) $this->server['REMOTE_ADDR'] : '127.0.0.1').(isset($this->server['HTTP_USER_AGENT']) ? (string) $this->server['HTTP_USER_AGENT'] : 'Mozilla') : (($this->hmac_ip !== true && $this->hmac_ua !== false) ? (isset($this->server['HTTP_USER_AGENT']) ? (string) $this->server['HTTP_USER_AGENT'] : 'Mozilla') : (isset($this->server['REMOTE_ADDR']) ? (string) $this->server['REMOTE_ADDR'] : '127.0.0.1'))),
                     (string) Base64UrlSafe::decode((string) $stored['token']),
                     true
                 )
@@ -403,8 +404,9 @@ class AntiCSRF
                 case 'formToken':
                 case 'sessionIndex':
                 case 'useNativeSession':
-                case 'recycle_after':
+                case 'recycle_after':    
                 case 'hmac_ip':
+                case 'hmac_ua':
                 case 'expire_old':
                     /** @psalm-suppress MixedAssignment */
                     $this->$opt = $val;
