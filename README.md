@@ -1,6 +1,6 @@
 # Anti-CSRF Library
 
-[![Build Status](https://travis-ci.org/paragonie/anti-csrf.svg?branch=master)](https://travis-ci.org/paragonie/anti-csrf)
+[![Build Status](https://github.com/paragonie/anti-csrf/actions/workflows/ci.yml/badge.svg)](https://github.com/paragonie/anti-csrf/actions)
 [![Latest Stable Version](https://poser.pugx.org/paragonie/anti-csrf/v/stable)](https://packagist.org/packages/paragonie/anti-csrf)
 [![Latest Unstable Version](https://poser.pugx.org/paragonie/anti-csrf/v/unstable)](https://packagist.org/packages/paragonie/anti-csrf)
 [![License](https://poser.pugx.org/paragonie/anti-csrf/license)](https://packagist.org/packages/paragonie/anti-csrf)
