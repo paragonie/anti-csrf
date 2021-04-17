@@ -16,5 +16,6 @@
         <DocblockTypeContradiction errorLevel="info" />
         <TypeDoesNotContainType errorLevel="info" />
         <MixedArgumentTypeCoercion errorLevel="info" />
+        <UnnecessaryVarAnnotation errorLevel="info" />
     </issueHandlers>
 </psalm>
