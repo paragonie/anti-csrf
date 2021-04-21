@@ -82,6 +82,6 @@ class Reusable extends AntiCSRF
         }
         $dateTime = (new \DateTime($token['created-date']))->add($this->tokenLifetime);
         $now = new \DateTime();
-        return $dateTime >= $now;
+        return $dateTime >= $now ? false : true;
     }
 }
