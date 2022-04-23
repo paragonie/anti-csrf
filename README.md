@@ -34,7 +34,7 @@ First, add a filter like this one:
 ```php
 use \ParagonIE\AntiCSRF\AntiCSRF;
 $twigEnv->addFunction(
-    new \Twig_SimpleFunction(
+    new \Twig\TwigFunction(
         'form_token',
         function($lock_to = null) {
             static $csrf;
