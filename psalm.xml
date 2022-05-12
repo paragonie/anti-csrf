@@ -1,8 +1,5 @@
 <?xml version="1.0"?>
-<psalm
-    useDocblockTypes="true"
-    totallyTyped="true"
->
+<psalm useDocblockTypes="true">
     <projectFiles>
         <directory name="src" />
     </projectFiles>
