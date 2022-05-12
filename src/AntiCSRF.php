@@ -296,7 +296,7 @@ class AntiCSRF
      * @return bool
      * @throws \TypeError
      */
-    public function validateRequest(): bool
+    public function validateRequest(string $lockTo = ''): bool
     {
         if ($this->useNativeSession) {
             if (!isset($_SESSION[$this->sessionIndex])) {
@@ -349,7 +349,9 @@ class AntiCSRF
 
         // Which form action="" is this token locked to?
         /** @var string $lockTo */
-        $lockTo = $this->server[$this->lock_type];
+        if (empty($lockTo)) {
+            $lockTo = $this->server[$this->lock_type];
+        }
         if (\preg_match('#/$#', $lockTo)) {
             // Trailing slashes are to be ignored
             $lockTo = Binary::safeSubstr(
