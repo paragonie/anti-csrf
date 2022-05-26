@@ -280,9 +280,7 @@ class AntiCSRF
             $token = Base64UrlSafe::encode(
                 \hash_hmac(
                     $this->hashAlgo,
-                    isset($this->server['REMOTE_ADDR'])
-                        ? (string) $this->server['REMOTE_ADDR']
-                        : '127.0.0.1',
+					$this->getRemoteIP(),
                     (string) Base64UrlSafe::decode($token),
                     true
                 )
@@ -407,9 +405,7 @@ class AntiCSRF
             $expected = Base64UrlSafe::encode(
                 \hash_hmac(
                     $this->hashAlgo,
-                    isset($this->server['REMOTE_ADDR'])
-                        ? (string) $this->server['REMOTE_ADDR']
-                        : '127.0.0.1',
+                    $this->getRemoteIP(),
                     (string) Base64UrlSafe::decode((string) $stored['token']),
                     true
                 )
@@ -547,5 +543,35 @@ class AntiCSRF
     protected static function noHTML(string $untrusted): string
     {
         return \htmlentities($untrusted, ENT_QUOTES, 'UTF-8');
+    }
+
+    /**
+     * Wrapper to support different sources of remote IP addresses.
+     *
+     * @return string
+     */
+    protected function getRemoteIP(): string
+    {
+        if (isset($this->server["HTTP_CF_CONNECTING_IP"]) && filter_var($this->server["HTTP_CF_CONNECTING_IP"], FILTER_VALIDATE_IP))
+        {
+            return $this->server["HTTP_CF_CONNECTING_IP"];
+        }
+
+        if (isset($this->server["HTTP_X_FORWARDED_FOR"]) && filter_var($this->server["HTTP_X_FORWARDED_FOR"], FILTER_VALIDATE_IP))
+        {
+            return $this->server["HTTP_X_FORWARDED_FOR"];
+        }
+
+        if (isset($this->server["HTTP_CLIENT_IP"]) && filter_var($this->server["HTTP_CLIENT_IP"], FILTER_VALIDATE_IP))
+        {
+            return $this->server["HTTP_CLIENT_IP"];
+        }
+
+        if (isset($this->server['REMOTE_ADDR']))
+        {
+            return $this->server['REMOTE_ADDR'];
+        }
+
+        return '127.0.0.1';
     }
 }
