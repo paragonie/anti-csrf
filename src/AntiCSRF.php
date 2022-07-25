@@ -305,6 +305,7 @@ class AntiCSRF
     public function validateRequest(string $lockTo = ''): bool
     {
         try {
+            $this->validateRequestOrThrow($lockTo);
             return true;
         } catch (AntiCSRFException $ex) {
         }
@@ -324,7 +325,7 @@ class AntiCSRF
      * @throws FormLockException
      * @throws TokenHashException
      */
-    public function validateRequestOrThrow()
+    public function validateRequestOrThrow(string $lockTo = '')
     {
         if ($this->useNativeSession) {
             if (!isset($_SESSION[$this->sessionIndex])) {
