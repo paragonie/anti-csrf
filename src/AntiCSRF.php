@@ -182,14 +182,17 @@ class AntiCSRF
     /**
      * Insert a CSRF token to a form
      *
-     * @param string $lockTo This CSRF token is only valid for this HTTP request endpoint
+     * @param array<string>|string $lockTo This CSRF token is only valid for these HTTP request endpoints
      * @param bool $echo if true, echo instead of returning
      * @return string
      * @throws \Exception
      * @throws \TypeError
      */
-    public function insertToken(string $lockTo = '', bool $echo = true): string
+    public function insertToken(array|string $lockTo = [], bool $echo = true): string
     {
+        if (\is_string($lockTo)) {
+            $lockTo = [$lockTo];
+        }
         $token_array = $this->getTokenArray($lockTo);
         $ret = \implode(
             \array_map(
@@ -246,13 +249,13 @@ class AntiCSRF
     /**
      * Retrieve a token array for unit testing endpoints
      *
-     * @param string $lockTo
+     * @param array<string>|string $lockTo
      * @return array
      *
      * @throws \Exception
      * @throws \TypeError
      */
-    public function getTokenArray(string $lockTo = ''): array
+    public function getTokenArray(array|string $lockTo = []): array
     {
         if ($this->useNativeSession) {
             if (!isset($_SESSION[$this->sessionIndex])) {
@@ -262,15 +265,14 @@ class AntiCSRF
             $this->session[$this->sessionIndex] = [];
         }
 
-        if (empty($lockTo)) {
-            /** @var string $lockTo */
-            $lockTo = isset($this->server['REQUEST_URI'])
+        if (\is_string($lockTo)) {
+            $lockTo = [$lockTo];
+        }
+        if (empty($lockTo[0])) {
+            /** @var array<string> $lockTo */
+            $lockTo[] = isset($this->server['REQUEST_URI'])
                 ? $this->server['REQUEST_URI']
                 : '/';
-        }
-
-        if (\preg_match('#/$#', $lockTo)) {
-            $lockTo = Binary::safeSubstr($lockTo, 0, Binary::safeStrlen($lockTo) - 1);
         }
 
         list($index, $token) = $this->generateToken($lockTo);
@@ -392,7 +394,14 @@ class AntiCSRF
             );
         }
 
-        if (!\hash_equals($lockTo, (string) $stored['lockTo'])) {
+        $lock_match = false;
+        foreach ($stored['lockTo'] as $_lockTo) {
+            if (\hash_equals($lockTo, (string) $_lockTo)) {
+                $lock_match = true;
+                break;
+            }
+        }
+        if (!$lock_match) {
             // Form target did not match the request this token is locked to!
             throw FormLockException::create($lockTo);
         }
@@ -468,7 +477,7 @@ class AntiCSRF
      * @throws \TypeError
      * @throws \Exception
      */
-    protected function generateToken(string $lockTo): array
+    protected function generateToken(array $lockTo): array
     {
         $index = Base64UrlSafe::encode(\random_bytes(18));
         $token = Base64UrlSafe::encode(\random_bytes(33));
@@ -483,12 +492,14 @@ class AntiCSRF
             'token' => $token
         ]);
 
-        if (\preg_match('#/$#', $lockTo)) {
-            $lockTo = Binary::safeSubstr(
-                $lockTo,
-                0,
-                Binary::safeStrlen($lockTo) - 1
-            );
+        foreach ($lockTo as $l => $_lockTo) {
+            if (\preg_match('#/$#', $_lockTo)) {
+                $lockTo[$l] = Binary::safeSubstr(
+                    $_lockTo,
+                    0,
+                    Binary::safeStrlen($_lockTo) - 1
+                );
+            }
         }
 
         if ($this->useNativeSession) {
