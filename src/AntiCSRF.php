@@ -549,4 +549,46 @@ class AntiCSRF
     {
         return \htmlentities($untrusted, ENT_QUOTES, 'UTF-8');
     }
+
+    /**
+     * @param string $formIndex
+     * @return bool
+     */
+    public function unsetToken(string $formIndex): bool
+    {
+        if ($this->useNativeSession) {
+            if (isset($_SESSION[$this->getSessionIndex()][$this->post[$formIndex]])) {
+                unset($_SESSION[$this->getSessionIndex()][$this->post[$formIndex]]);
+                return true;
+            }
+            return false;
+        }
+
+        if (isset($this->session[$this->getSessionIndex()][$this->post[$formIndex]])) {
+            unset($this->session[$this->getSessionIndex()][$this->post[$formIndex]]);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @param string $sessionIndex
+     * @return bool
+     */
+    public function unsetSessionIndex(string $sessionIndex): bool
+    {
+        if ($this->useNativeSession) {
+            if (isset($_SESSION[$sessionIndex])) {
+                unset($_SESSION[$sessionIndex]);
+                return true;
+            }
+            return false;
+        }
+
+        if (isset($this->session[$sessionIndex])) {
+            unset($this->session[$sessionIndex]);
+            return true;
+        }
+        return false;
+    }
 }
