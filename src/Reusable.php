@@ -21,7 +21,7 @@ class Reusable extends AntiCSRF
     /**
      * @var \DateInterval|null
      */
-    protected $tokenLifetime = null;
+    protected ?\DateInterval $tokenLifetime = null;
 
     /**
      * @param \DateInterval $interval
@@ -57,12 +57,9 @@ class Reusable extends AntiCSRF
         /** @var string $opt */
         /** @var \DateInterval $val */
         foreach ($options as $opt => $val) {
-            switch ($opt) {
-                case 'tokenLifetime':
-                    if ($val instanceof \DateInterval) {
-                        $this->tokenLifetime = $val;
-                    }
-                    break;
+            if ($opt == 'tokenLifetime' && $val instanceof \DateInterval) {
+                $this->tokenLifetime = $val;
+                break;
             }
         }
         return parent::reconfigure($options);
