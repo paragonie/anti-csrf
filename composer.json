@@ -29,7 +29,7 @@
     },
     "require": {
         "php": "^7|^8",
-        "paragonie/constant_time_encoding": "^2"
+        "paragonie/constant_time_encoding": "^2|^3"
     },
     "require-dev": {
         "phpunit/phpunit": "^6|^7|^8|^9",

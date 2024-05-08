@@ -14,5 +14,6 @@
         <TypeDoesNotContainType errorLevel="info" />
         <MixedArgumentTypeCoercion errorLevel="info" />
         <UnnecessaryVarAnnotation errorLevel="info" />
+        <PossiblyInvalidArrayOffset errorLevel="info" />
     </issueHandlers>
 </psalm>
