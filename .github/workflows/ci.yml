@@ -27,9 +27,7 @@ jobs:
         run: composer self-update --1; composer install
 
       - name: PHPUnit tests
-        uses: php-actions/phpunit@v2
-        with:
-          memory_limit: 256M
+        run: vendor/bin/phpunit
 
   moderate:
     name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
@@ -58,10 +56,7 @@ jobs:
         run: composer require --dev "phpunit/phpunit:>=4"
 
       - name: PHPUnit tests
-        uses: php-actions/phpunit@v2
-        timeout-minutes: 30
-        with:
-          memory_limit: 256M
+        run: vendor/bin/phpunit
 
   modern:
     name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
@@ -90,10 +85,7 @@ jobs:
         run: composer require --dev "phpunit/phpunit:>=4"
 
       - name: PHPUnit tests
-        uses: php-actions/phpunit@v2
-        timeout-minutes: 30
-        with:
-          memory_limit: 256M
+        run: vendor/bin/phpunit
 
       - name: Install Psalm
         run: composer require --dev vimeo/psalm:^4
