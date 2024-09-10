@@ -446,7 +446,7 @@ class AntiCSRF
                     $this->$opt = $val;
                     break;
                 case 'hashAlgo':
-                    if (\in_array($val, \hash_algos(), true)) {
+                    if (\in_array($val, \hash_hmac_algos(), true)) {
                         $this->hashAlgo = (string) $val;
                     }
                     break;
